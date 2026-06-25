@@ -50,7 +50,7 @@
 			return;
 		}
 
-		if (state.offset >= state.total) {
+		if (state.total > 0 && state.offset >= state.total) {
 			state.running = false;
 			updateProgress();
 			setButtonsIdle();
