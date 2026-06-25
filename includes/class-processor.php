@@ -153,11 +153,11 @@ class AAT_Processor {
 				'id'     => $attachment_id,
 				'title'  => get_the_title( $attachment_id ),
 				'status' => 'error',
-				'error'  => $alt_text->get_error_message(),
+				'error'  => __( 'AI generation failed.', 'auto-alt-text' ),
 			);
 		}
 
-		update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt_text );
+		update_post_meta( $attachment_id, '_wp_attachment_image_alt', sanitize_text_field( $alt_text ) );
 
 		return array(
 			'id'          => $attachment_id,
