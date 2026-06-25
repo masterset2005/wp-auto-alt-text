@@ -4,10 +4,11 @@ Uses the **WordPress 7.0 AI Client** to automatically generate and improve alt t
 
 ## Features
 
-- **Bulk AI generation** — Process hundreds of images with real-time progress
-- **Three modes** — Missing alt text only, missing/empty, or regenerate all
+- **Bulk AI generation** — Process thousands of images sequentially with real-time progress (no total limit)
+- **Review & Improve mode** — AI evaluates your existing alt text against the image; keeps it if good, replaces it if generic or inaccurate
+- **Four modes** — Missing alt text only, missing/empty, review existing, or regenerate all
 - **Pause / Resume / Cancel** — Full control over long-running jobs
-- **Per-image logging** — See exactly what was generated for each image
+- **Per-image logging** — See what was generated, changed, or kept for each image
 - **Smart prompts** — AI follows accessibility best practices (no "Image of", <125 chars, decorative detection)
 - **Adjustable batch size** — Tune 1–20 images per request for your server
 

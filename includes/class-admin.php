@@ -60,7 +60,8 @@ class AAT_Admin {
 		$ai_available = function_exists( 'wp_ai_client_prompt' );
 		$processor = AAT_Processor::init();
 		$total_missing = $processor->get_total_images( 'missing' );
-		$total_poor = $processor->get_total_images( 'poor' );
+		$total_poor    = $processor->get_total_images( 'poor' );
+		$total_all     = $processor->get_total_images( 'all' );
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Auto Alt Text Generator', 'auto-alt-text' ); ?></h1>
@@ -74,11 +75,14 @@ class AAT_Admin {
 
 			<div class="aat-status">
 				<p>
-					<?php esc_html_e( 'Images with missing alt text:', 'auto-alt-text' ); ?>
+					<?php esc_html_e( 'Missing alt:', 'auto-alt-text' ); ?>
 					<strong><?php echo esc_html( $total_missing ); ?></strong>
 					&middot;
-					<?php esc_html_e( 'Images with missing or empty alt text:', 'auto-alt-text' ); ?>
+					<?php esc_html_e( 'Missing or empty:', 'auto-alt-text' ); ?>
 					<strong><?php echo esc_html( $total_poor ); ?></strong>
+					&middot;
+					<?php esc_html_e( 'Total images:', 'auto-alt-text' ); ?>
+					<strong><?php echo esc_html( $total_all ); ?></strong>
 				</p>
 			</div>
 
@@ -95,6 +99,9 @@ class AAT_Admin {
 								</option>
 								<option value="poor">
 									<?php esc_html_e( 'Images with missing or empty alt text', 'auto-alt-text' ); ?>
+								</option>
+								<option value="review">
+									<?php esc_html_e( 'Review & improve existing alt text (AI evaluates quality)', 'auto-alt-text' ); ?>
 								</option>
 								<option value="all">
 									<?php esc_html_e( 'All images (regenerate all alt text)', 'auto-alt-text' ); ?>
@@ -115,7 +122,7 @@ class AAT_Admin {
 								<option value="20">20</option>
 							</select>
 							<p class="description">
-								<?php esc_html_e( 'Number of images processed per batch. Lower values are more reliable on slow hosts.', 'auto-alt-text' ); ?>
+								<?php esc_html_e( 'Images per AJAX request. All images are processed sequentially — this is not a total limit. Lower values are more reliable on slow hosts.', 'auto-alt-text' ); ?>
 							</p>
 						</td>
 					</tr>

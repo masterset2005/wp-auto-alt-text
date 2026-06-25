@@ -97,7 +97,7 @@ class AAT_Processor {
 
 		$results = array();
 		foreach ( $ids as $id ) {
-			$result = $this->generate_alt_text_for_image( $id );
+			$result = $this->generate_alt_text_for_image( $id, $mode );
 			$results[] = $result;
 		}
 
@@ -108,7 +108,7 @@ class AAT_Processor {
 		);
 	}
 
-	private function generate_alt_text_for_image( $attachment_id ) {
+	private function generate_alt_text_for_image( $attachment_id, $mode = 'missing' ) {
 		$current_alt = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
 
 		$file = get_attached_file( $attachment_id );
@@ -132,14 +132,30 @@ class AAT_Processor {
 			);
 		}
 
-		$alt_text = wp_ai_client_prompt( 'Generate concise, descriptive alt text for this image.' )
-			->using_system_instruction(
-				'You are an accessibility expert generating alt text for website images. '
-				. 'Keep it under 125 characters. Describe only what is visible. '
-				. 'Do not start with "Image of", "Photo of", or "Picture of". '
-				. 'If the image appears to be decorative (pure background, spacer, or empty), '
-				. 'return an empty string. Return plain text only.'
-			)
+		if ( 'review' === $mode && ! empty( $current_alt ) ) {
+			$prompt  = "Review the alt text for this image and improve it if necessary.\n";
+			$prompt .= "Current alt text: \"{$current_alt}\"";
+
+			$system  = 'You are an accessibility expert reviewing alt text for website images. ';
+			$system .= 'Evaluate the provided alt text against the image. ';
+			$system .= 'If the existing alt text is accurate, descriptive, and follows best practices (under 125 chars, no "Image of" prefix, describes visible content), return it exactly as-is without any changes. ';
+			$system .= 'If it is missing, empty, generic (like "image", "photo", "picture", "img"), or does not accurately describe the visible content, generate a better alternative. ';
+			$system .= 'Keep it under 125 characters. Describe only what is visible. ';
+			$system .= 'Do not start with "Image of", "Photo of", or "Picture of". ';
+			$system .= 'If the image appears to be decorative, return an empty string. ';
+			$system .= 'Return plain text only.';
+		} else {
+			$prompt  = 'Generate concise, descriptive alt text for this image.';
+
+			$system  = 'You are an accessibility expert generating alt text for website images. ';
+			$system .= 'Keep it under 125 characters. Describe only what is visible. ';
+			$system .= 'Do not start with "Image of", "Photo of", or "Picture of". ';
+			$system .= 'If the image appears to be decorative (pure background, spacer, or empty), ';
+			$system .= 'return an empty string. Return plain text only.';
+		}
+
+		$alt_text = wp_ai_client_prompt( $prompt )
+			->using_system_instruction( $system )
 			->with_file( $file, $mime )
 			->using_model_preference(
 				'claude-sonnet-4-6',
@@ -157,6 +173,8 @@ class AAT_Processor {
 			);
 		}
 
+		$changed = $alt_text !== $current_alt;
+
 		update_post_meta( $attachment_id, '_wp_attachment_image_alt', sanitize_text_field( $alt_text ) );
 
 		return array(
@@ -165,6 +183,7 @@ class AAT_Processor {
 			'status'      => 'success',
 			'previous'    => $current_alt ?: '',
 			'generated'   => $alt_text,
+			'changed'     => $changed,
 		);
 	}
 }

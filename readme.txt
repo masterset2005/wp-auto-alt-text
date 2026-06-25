@@ -16,12 +16,13 @@ Auto Alt Text Generator harnesses the WordPress 7.0 AI Client to scan your entir
 
 = Features =
 
-* **Bulk AI generation** — Process hundreds of images in one session with batch processing and real-time progress.
-* **Three processing modes** — Process only images with missing alt text, images with missing or empty alt text, or regenerate all alt text.
+* **Bulk AI generation** — Process thousands of images in one session. Batches run sequentially until all images are processed (no total limit).
+* **Review & Improve mode** — AI evaluates your existing alt text against the image and keeps it if good, replaces it if generic or inaccurate.
+* **Four processing modes** — Missing only, missing/empty, review existing, or regenerate all.
 * **Pause / Resume / Cancel** — Full control over long-running jobs. Pause at any time and pick up where you left off.
-* **Per-image logging** — See exactly what was generated for each image, including errors and skips.
+* **Per-image logging** — See exactly what was generated for each image, including whether it was changed or kept, plus errors and skips.
 * **Smart system prompt** — The AI is instructed to produce concise alt text (<125 characters), avoid "Image of" prefixes, and return empty for decorative images.
-* **Batch size control** — Adjust how many images are processed per AJAX request (1–20) to match your server's limits.
+* **Adjustable batch size** — Control how many images are processed per AJAX request (1–20) to match your server's limits.
 * **Uses WP 7.0 AI Client** — No third-party API keys required beyond what you configure in Settings > Connectors. Works with Anthropic, Google, and OpenAI provider plugins.
 
 = Requirements =
@@ -50,7 +51,7 @@ Any provider plugin compatible with the WordPress 7.0 AI Client. Officially supp
 
 = Will this overwrite my existing alt text? =
 
-Only if you select "All images" mode. The default "Missing alt text only" and "Missing or empty alt text" modes preserve existing alt text.
+Only if you select "All images" mode. "Missing only" and "Missing or empty" modes leave existing alt text untouched. "Review & Improve" mode passes your existing alt to the AI for evaluation — it keeps it if accurate and descriptive, replaces it if generic or inaccurate.
 
 = Can I cancel mid-processing? =
 
@@ -75,9 +76,10 @@ The system instruction guides the AI to produce concise, descriptive alt text fo
 = 1.0.0 =
 * Initial release.
 * Bulk AI alt text generation for media library images.
-* Three processing modes: missing, poor, and all.
+* Four processing modes: missing, poor, review, and all.
+* Review mode: AI evaluates existing alt text and keeps or improves it.
 * Batch processing with pause/resume/cancel.
-* Per-image progress logging.
+* Per-image progress logging with changed/kept indicators.
 
 == Upgrade Notice ==
 

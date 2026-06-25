@@ -82,7 +82,14 @@
 					var title = r.title || '#' + r.id;
 					if (r.status === 'success') {
 						state.success++;
-						logEntry('success', '#' + r.id + ' ' + title + ' → "' + (r.generated || '(decorative)') + '"');
+						var label = r.changed ? '→' : '✓ (kept)';
+						var preview = (r.generated || '(decorative)').substring(0, 80);
+						var prevPreview = r.previous ? r.previous.substring(0, 60) : '';
+						var msg = '#' + r.id + ' ' + title + ' ' + label + ' "' + preview + '"';
+						if (r.changed && r.previous) {
+							msg += ' (was: "' + prevPreview + '")';
+						}
+						logEntry('success', msg);
 					} else if (r.status === 'error') {
 						state.errors++;
 						logEntry('error', '#' + r.id + ' ' + title + ' ✗ ' + (r.error || 'Unknown error'));
