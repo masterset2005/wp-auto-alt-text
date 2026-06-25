@@ -65,6 +65,20 @@ Failed images are logged with an error message and processing continues with the
 
 The system instruction guides the AI to produce concise, descriptive alt text following accessibility best practices. It avoids "Image of" prefixes and returns empty for decorative images. You should always review AI-generated alt text for critical content.
 
+== External Services ==
+
+This plugin uses the WordPress 7.0 AI Client (`wp_ai_client_prompt()`) to generate alt text. Depending on the AI provider you configure under Settings > Connectors, the following data is sent to third-party AI services:
+
+* The image file (as a data URI) is transmitted to the AI provider for analysis
+* The text prompt and system instructions are sent as part of the API request
+* No personally identifiable information, login details, or site configuration data is transmitted
+
+Supported providers include Anthropic (Claude), Google (Gemini), and OpenAI (GPT). You must explicitly configure and activate at least one provider plugin and enter your own API key. No data is sent until you do so.
+
+* **Anthropic**: https://www.anthropic.com/legal/consumer-terms
+* **Google**: https://policies.google.com/privacy
+* **OpenAI**: https://openai.com/policies/privacy-policy
+
 == Screenshots ==
 
 1. The Auto Alt Text admin page with mode selection and controls.

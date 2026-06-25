@@ -1,4 +1,4 @@
-.aat-status {
+.autoalt-status {
 	background: #fff;
 	border: 1px solid #c3c4c7;
 	border-left: 4px solid #2271b1;
@@ -6,26 +6,26 @@
 	margin: 20px 0;
 }
 
-.aat-status p {
+.autoalt-status p {
 	margin: 0;
 	font-size: 14px;
 }
 
-.aat-controls {
+.autoalt-controls {
 	background: #fff;
 	border: 1px solid #c3c4c7;
 	padding: 16px;
 	margin: 20px 0;
 }
 
-.aat-progress {
+.autoalt-progress {
 	background: #fff;
 	border: 1px solid #c3c4c7;
 	padding: 20px;
 	margin: 20px 0;
 }
 
-.aat-progress-bar-wrapper {
+.autoalt-progress-bar-wrapper {
 	background: #e0e0e0;
 	border-radius: 3px;
 	height: 24px;
@@ -33,20 +33,20 @@
 	overflow: hidden;
 }
 
-.aat-progress-bar {
+.autoalt-progress-bar {
 	background: #2271b1;
 	height: 100%;
 	transition: width 0.3s ease;
 	width: 0;
 }
 
-.aat-progress-text {
+.autoalt-progress-text {
 	margin: 0;
 	font-size: 14px;
 	color: #555;
 }
 
-.aat-log {
+.autoalt-log {
 	background: #fff;
 	border: 1px solid #c3c4c7;
 	padding: 16px;
@@ -55,39 +55,39 @@
 	overflow-y: auto;
 }
 
-.aat-log h2 {
+.autoalt-log h2 {
 	margin-top: 0;
 }
 
-.aat-log-content {
+.autoalt-log-content {
 	font-family: monospace;
 	font-size: 13px;
 	line-height: 1.6;
 }
 
-.aat-log-entry {
+.autoalt-log-entry {
 	padding: 4px 8px;
 	margin: 2px 0;
 	border-radius: 2px;
 }
 
-.aat-log-entry.success {
+.autoalt-log-entry.success {
 	background: #edfaef;
 	border-left: 3px solid #00a32a;
 }
 
-.aat-log-entry.error {
+.autoalt-log-entry.error {
 	background: #fcf0f1;
 	border-left: 3px solid #d63638;
 }
 
-.aat-log-entry.skipped {
+.autoalt-log-entry.skipped {
 	background: #f6f7f7;
 	border-left: 3px solid #c3c4c7;
 	color: #646970;
 }
 
-.aat-log-entry.info {
+.autoalt-log-entry.info {
 	background: #f0f6fc;
 	border-left: 3px solid #2271b1;
 }

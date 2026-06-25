@@ -2,7 +2,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-class AAT_Processor {
+class AutoAlt_Processor {
 
 	private static $instance = null;
 
@@ -15,7 +15,7 @@ class AAT_Processor {
 
 	public static function activation_check() {
 		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
-			deactivate_plugins( plugin_basename( AAT_PLUGIN_DIR . 'wp-auto-alt-text.php' ) );
+			deactivate_plugins( plugin_basename( AUTOALT_PLUGIN_DIR . 'wp-auto-alt-text.php' ) );
 			wp_die(
 				esc_html__( 'Auto Alt Text Generator requires WordPress 7.0 or later.', 'auto-alt-text' )
 			);

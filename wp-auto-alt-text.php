@@ -17,18 +17,18 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AAT_VERSION', '1.0.0' );
-define( 'AAT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'AUTOALT_VERSION', '1.0.0' );
+define( 'AUTOALT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
-require_once AAT_PLUGIN_DIR . 'includes/class-processor.php';
-require_once AAT_PLUGIN_DIR . 'includes/class-admin.php';
+require_once AUTOALT_PLUGIN_DIR . 'includes/class-processor.php';
+require_once AUTOALT_PLUGIN_DIR . 'includes/class-admin.php';
 
-register_activation_hook( __FILE__, array( 'AAT_Processor', 'activation_check' ) );
+register_activation_hook( __FILE__, array( 'AutoAlt_Processor', 'activation_check' ) );
 
-add_action( 'plugins_loaded', 'aat_load_textdomain' );
-add_action( 'plugins_loaded', array( 'AAT_Admin', 'init' ) );
-add_action( 'plugins_loaded', array( 'AAT_Processor', 'init' ) );
+add_action( 'plugins_loaded', 'autoalt_load_textdomain' );
+add_action( 'plugins_loaded', array( 'AutoAlt_Admin', 'init' ) );
+add_action( 'plugins_loaded', array( 'AutoAlt_Processor', 'init' ) );
 
-function aat_load_textdomain() {
+function autoalt_load_textdomain() {
 	load_plugin_textdomain( 'auto-alt-text', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 }

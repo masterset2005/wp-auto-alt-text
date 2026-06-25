@@ -13,8 +13,8 @@
 	};
 
 	function logEntry(type, message) {
-		var $log = $('#aat-log');
-		var $content = $log.find('.aat-log-content');
+		var $log = $('#autoalt-log');
+		var $content = $log.find('.autoalt-log-content');
 		$log.show();
 		$content.append(
 			$('<div>').addClass('aat-log-entry ' + type).text(message)
@@ -23,9 +23,9 @@
 	}
 
 	function updateProgress() {
-		var $progress = $('#aat-progress');
-		var $bar = $progress.find('.aat-progress-bar');
-		var $text = $progress.find('.aat-progress-text');
+		var $progress = $('#autoalt-progress');
+		var $bar = $progress.find('.autoalt-progress-bar');
+		var $text = $progress.find('.autoalt-progress-text');
 		$progress.show();
 
 		var doneCount = state.success + state.errors + state.skipped;
@@ -50,11 +50,11 @@
 		}
 
 		$.ajax({
-			url: aatData.ajaxUrl,
+			url: autoaltData.ajaxUrl,
 			method: 'POST',
 			data: {
-				action: 'aat_process_batch',
-				nonce: aatData.nonce,
+				action: 'autoalt_process_batch',
+				nonce: autoaltData.nonce,
 				mode: state.mode,
 				batch: state.batch,
 				offset: state.offset,
@@ -121,28 +121,28 @@
 	}
 
 	function setButtonsRunning() {
-		$('#aat-start').hide();
-		$('#aat-pause').show().prop('disabled', false);
-		$('#aat-resume').hide();
-		$('#aat-cancel').show().prop('disabled', false);
+		$('#autoalt-start').hide();
+		$('#autoalt-pause').show().prop('disabled', false);
+		$('#autoalt-resume').hide();
+		$('#autoalt-cancel').show().prop('disabled', false);
 	}
 
 	function setButtonsPaused() {
-		$('#aat-start').hide();
-		$('#aat-pause').hide();
-		$('#aat-resume').show().prop('disabled', false);
-		$('#aat-cancel').show().prop('disabled', false);
+		$('#autoalt-start').hide();
+		$('#autoalt-pause').hide();
+		$('#autoalt-resume').show().prop('disabled', false);
+		$('#autoalt-cancel').show().prop('disabled', false);
 	}
 
 	function setButtonsIdle() {
-		$('#aat-start').show().prop('disabled', false);
-		$('#aat-pause').hide();
-		$('#aat-resume').hide();
-		$('#aat-cancel').hide();
+		$('#autoalt-start').show().prop('disabled', false);
+		$('#autoalt-pause').hide();
+		$('#autoalt-resume').hide();
+		$('#autoalt-cancel').hide();
 	}
 
-	$('#aat-start').on('click', function () {
-		if (!aatData.aiAvailable) {
+	$('#autoalt-start').on('click', function () {
+		if (!autoaltData.aiAvailable) {
 			alert('AI Client is not available. Configure an AI provider under Settings > Connectors.');
 			return;
 		}
@@ -150,16 +150,16 @@
 		state.running = true;
 		state.paused = false;
 		state.cancelled = false;
-		state.mode = $('#aat-mode').val();
-		state.batch = parseInt($('#aat-batch').val(), 10);
+		state.mode = $('#autoalt-mode').val();
+		state.batch = parseInt($('#autoalt-batch').val(), 10);
 		state.offset = 0;
 		state.success = 0;
 		state.errors = 0;
 		state.skipped = 0;
 		state.total = 0;
 
-		$('#aat-log .aat-log-content').empty();
-		$('#aat-progress').hide();
+		$('#autoalt-log .autoalt-log-content').empty();
+		$('#autoalt-progress').hide();
 
 		setButtonsRunning();
 		logEntry('info', 'Starting processing (mode: ' + state.mode + ', batch: ' + state.batch + ')...');
@@ -167,20 +167,20 @@
 		sendBatch();
 	});
 
-	$('#aat-pause').on('click', function () {
+	$('#autoalt-pause').on('click', function () {
 		state.paused = true;
 		setButtonsPaused();
 		logEntry('info', 'Paused.');
 	});
 
-	$('#aat-resume').on('click', function () {
+	$('#autoalt-resume').on('click', function () {
 		state.paused = false;
 		setButtonsRunning();
 		logEntry('info', 'Resuming...');
 		sendBatch();
 	});
 
-	$('#aat-cancel').on('click', function () {
+	$('#autoalt-cancel').on('click', function () {
 		state.cancelled = true;
 		state.paused = false;
 		state.running = false;
