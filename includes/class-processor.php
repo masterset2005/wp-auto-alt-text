@@ -78,34 +78,37 @@ class AAT_Processor {
 	}
 
 	public function process_batch( $mode, $offset, $batch_size ) {
+		$defaults = array(
+			'done'    => false,
+			'results' => array(),
+		);
+
 		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
-			return array(
+			return array_merge( $defaults, array(
 				'success' => false,
 				'message' => __( 'WordPress 7.0 AI Client not available.', 'auto-alt-text' ),
-			);
+			) );
 		}
 
 		$ids = $this->get_image_ids( $mode, $offset, $batch_size );
 
 		if ( empty( $ids ) ) {
-			return array(
+			return array_merge( $defaults, array(
 				'success' => true,
 				'done'    => true,
-				'results' => array(),
-			);
+			) );
 		}
 
 		$results = array();
 		foreach ( $ids as $id ) {
-			$result = $this->generate_alt_text_for_image( $id, $mode );
-			$results[] = $result;
+			$results[] = $this->generate_alt_text_for_image( $id, $mode );
 		}
 
-		return array(
+		return array_merge( $defaults, array(
 			'success' => true,
 			'done'    => count( $ids ) < $batch_size,
 			'results' => $results,
-		);
+		) );
 	}
 
 	private function generate_alt_text_for_image( $attachment_id, $mode = 'missing' ) {

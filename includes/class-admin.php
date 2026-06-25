@@ -34,18 +34,21 @@ class AAT_Admin {
 			return;
 		}
 
+		$js_ver  = filemtime( plugin_dir_path( __DIR__ ) . 'assets/admin.js' );
+		$css_ver = filemtime( plugin_dir_path( __DIR__ ) . 'assets/admin.css' );
+
 		wp_enqueue_style(
 			'aat-admin',
 			plugin_dir_url( __DIR__ ) . 'assets/admin.css',
 			array(),
-			AAT_VERSION
+			$css_ver
 		);
 
 		wp_enqueue_script(
 			'aat-admin',
 			plugin_dir_url( __DIR__ ) . 'assets/admin.js',
 			array( 'jquery' ),
-			AAT_VERSION,
+			$js_ver,
 			true
 		);
 

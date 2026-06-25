@@ -7,7 +7,6 @@
 		batch: 5,
 		offset: 0,
 		total: 0,
-		processed: 0,
 		success: 0,
 		errors: 0,
 		skipped: 0,
@@ -29,10 +28,10 @@
 		var $text = $progress.find('.aat-progress-text');
 		$progress.show();
 
-		var pct = state.total > 0 ? Math.min((state.offset / state.total) * 100, 100) : 0;
+		var doneCount = state.success + state.errors + state.skipped;
+		var pct = state.total > 0 ? Math.min((doneCount / state.total) * 100, 100) : 0;
 		$bar.css('width', pct + '%');
 
-		var doneCount = state.success + state.errors + state.skipped;
 		$text.text(
 			'Processed ' + doneCount + ' / ' + state.total +
 			' (' + state.success + ' ok, ' + state.errors + ' errors, ' + state.skipped + ' skipped)'
@@ -40,21 +39,13 @@
 
 		if (state.cancelled) {
 			$text.text($text.text() + ' — Cancelled');
-		} else if (doneCount >= state.total) {
+		} else if (doneCount >= state.total && state.total > 0) {
 			$text.text($text.text() + ' — Complete!');
 		}
 	}
 
-	function processNextBatch() {
+	function sendBatch() {
 		if (!state.running || state.paused || state.cancelled) {
-			return;
-		}
-
-		if (state.total > 0 && state.offset >= state.total) {
-			state.running = false;
-			updateProgress();
-			setButtonsIdle();
-			logEntry('info', 'Processing complete.');
 			return;
 		}
 
@@ -69,8 +60,12 @@
 				offset: state.offset,
 			},
 			success: function (response) {
+				if (!state.running || state.cancelled) {
+					return;
+				}
+
 				if (!response.success) {
-					logEntry('error', 'AJAX error: ' + (response.data.message || 'Unknown error'));
+					logEntry('error', 'Server error: ' + (response.data && response.data.message ? response.data.message : 'unknown'));
 					state.running = false;
 					setButtonsIdle();
 					return;
@@ -78,38 +73,34 @@
 
 				var data = response.data;
 
-				$.each(data.batch.results, function (i, r) {
-					var title = r.title || '#' + r.id;
-					if (r.status === 'success') {
-						state.success++;
-						var label = r.changed ? '→' : '✓ (kept)';
-						var preview = (r.generated || '(decorative)').substring(0, 80);
-						var prevPreview = r.previous ? r.previous.substring(0, 60) : '';
-						var msg = '#' + r.id + ' ' + title + ' ' + label + ' "' + preview + '"';
-						if (r.changed && r.previous) {
-							msg += ' (was: "' + prevPreview + '")';
-						}
-						logEntry('success', msg);
-					} else if (r.status === 'error') {
-						state.errors++;
-						logEntry('error', '#' + r.id + ' ' + title + ' ✗ ' + (r.error || 'Unknown error'));
-					} else if (r.status === 'skipped') {
-						state.skipped++;
-						logEntry('skipped', '#' + r.id + ' ' + title + ' — ' + (r.reason || 'Skipped'));
-					}
-				});
-
+				state.total = data.total > 0 ? data.total : state.total;
 				state.offset = data.offset;
 
-				if (state.total === 0 && data.total > 0) {
-					state.total = data.total;
-				} else if (data.total > 0) {
-					state.total = data.total;
+				if (data.batch && data.batch.results) {
+					$.each(data.batch.results, function (i, r) {
+						var title = r.title || '#' + r.id;
+						if (r.status === 'success') {
+							state.success++;
+							var label = r.changed ? '→' : '✓ (kept)';
+							var preview = (r.generated || '(decorative)').substring(0, 80);
+							var msg = '#' + r.id + ' ' + title + ' ' + label + ' "' + preview + '"';
+							if (r.changed && r.previous) {
+								msg += ' (was: "' + r.previous.substring(0, 60) + '")';
+							}
+							logEntry('success', msg);
+						} else if (r.status === 'error') {
+							state.errors++;
+							logEntry('error', '#' + r.id + ' ' + title + ' ✗ ' + (r.error || 'Unknown error'));
+						} else if (r.status === 'skipped') {
+							state.skipped++;
+							logEntry('skipped', '#' + r.id + ' ' + title + ' — ' + (r.reason || 'Skipped'));
+						}
+					});
 				}
 
 				updateProgress();
 
-				if (data.done || state.offset >= state.total) {
+				if (data.done || (state.total > 0 && state.offset >= state.total)) {
 					state.running = false;
 					setButtonsIdle();
 					logEntry('info', 'Processing complete.');
@@ -117,11 +108,12 @@
 				}
 
 				if (!state.paused && !state.cancelled) {
-					setTimeout(processNextBatch, 500);
+					setTimeout(sendBatch, 500);
 				}
 			},
 			error: function (jqXHR) {
-				logEntry('error', 'Request failed: ' + jqXHR.statusText);
+				if (!state.running) return;
+				logEntry('error', 'Request failed: ' + jqXHR.statusText + ' (' + jqXHR.status + ')');
 				state.running = false;
 				setButtonsIdle();
 			},
@@ -161,19 +153,18 @@
 		state.mode = $('#aat-mode').val();
 		state.batch = parseInt($('#aat-batch').val(), 10);
 		state.offset = 0;
-		state.processed = 0;
 		state.success = 0;
 		state.errors = 0;
 		state.skipped = 0;
+		state.total = 0;
 
 		$('#aat-log .aat-log-content').empty();
 		$('#aat-progress').hide();
 
 		setButtonsRunning();
 		logEntry('info', 'Starting processing (mode: ' + state.mode + ', batch: ' + state.batch + ')...');
-		logEntry('info', 'Counting total images...');
 
-		processNextBatch();
+		sendBatch();
 	});
 
 	$('#aat-pause').on('click', function () {
@@ -186,7 +177,7 @@
 		state.paused = false;
 		setButtonsRunning();
 		logEntry('info', 'Resuming...');
-		processNextBatch();
+		sendBatch();
 	});
 
 	$('#aat-cancel').on('click', function () {
