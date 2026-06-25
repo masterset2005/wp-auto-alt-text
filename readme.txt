@@ -1,6 +1,6 @@
 === Auto Alt Text Generator ===
 Contributors: masterset2005
-Tags: alt text, AI, accessibility, media library, images, SEO, WordPress 7.0
+Tags: alt text, accessibility, images, media library, AI
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.0
