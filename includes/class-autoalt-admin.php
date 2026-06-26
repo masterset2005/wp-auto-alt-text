@@ -194,6 +194,7 @@ class AutoAlt_Admin {
 	public function render_processing_page() {
 		$action = isset( $_GET['autoalt_action'] ) ? sanitize_key( wp_unslash( $_GET['autoalt_action'] ) ) : ''; //phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$stats  = AutoAlt_Processor::init()->get_stats();
+		/** @var array{is_running: bool, completed: bool, mode: string, processed: int, total: int, failed: int}|false $job */
 		$job    = get_option( 'autoalt_job_status', false );
 		?>
 		<div class="wrap">

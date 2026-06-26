@@ -54,6 +54,7 @@ class AutoAlt_Processor {
 	public function get_stats() {
 		global $wpdb;
 
+		/** @var \wpdb $wpdb */
 		$sql = $wpdb->prepare(
 			"
 			SELECT
@@ -134,13 +135,17 @@ class AutoAlt_Processor {
 	 * @return array{id: int, title: string, status: string, previous?: string, generated?: string, changed?: bool, error?: string, reason?: string}
 	 */
 	public function process_single( $attachment_id, $mode = 'review' ) {
-		$current_alt = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
+		$current_alt = (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
 		$file        = get_attached_file( $attachment_id );
 		$mime        = get_post_mime_type( $attachment_id );
 		$title       = get_the_title( $attachment_id );
 
 		if ( ! $file || ! file_exists( $file ) ) {
 			return $this->result( $attachment_id, $title, 'error', null, __( 'File not found on server.', 'auto-alt-text-generator' ) );
+		}
+
+		if ( ! is_string( $mime ) ) {
+			return $this->result( $attachment_id, $title, 'error', null, __( 'Could not determine file type.', 'auto-alt-text-generator' ) );
 		}
 
 		if ( ! str_starts_with( $mime, 'image/' ) ) {
@@ -208,6 +213,9 @@ class AutoAlt_Processor {
 			$alt_text
 		);
 
+		// Strip category labels that models sometimes include despite instructions.
+		$alt_text = preg_replace( '/^(?:Informative|Decorative|Functional):\s+/i', '', $alt_text );
+
 		if ( strlen( $alt_text ) > 125 ) {
 			$alt_text = substr( $alt_text, 0, 125 );
 		}
@@ -237,14 +245,13 @@ class AutoAlt_Processor {
 			. 'Follow this order:' . "\n\n"
 			. '1) Decorative or redundant?' . "\n"
 			. '- Purely decorative (flourish, spacer, visual-only styling) OR the same information is already in adjacent text.' . "\n"
-			. '- Output exactly: [[DECORATIVE_ALT]]' . "\n"
-			. '- Do not describe the image for decorative/redundant cases.' . "\n\n"
+			. '- Output exactly: [[DECORATIVE_ALT]]. Do not describe the image, and do not include any labels like "Decorative:".' . "\n\n"
 			. '2) Functional (image is a control or the main content of a link or button)?' . "\n"
 			. '- Examples: linked image with no other text in the link; icon-only button; logo linking home.' . "\n"
-			. '- Output: short text describing the action or destination, not the image.' . "\n\n"
+			. '- Output only the short text describing the action or destination. Do not include labels like "Functional:".' . "\n\n"
 			. '3) Informative:' . "\n"
 			. '- Convey the information the image presents. Keep under 125 characters.' . "\n"
-			. '- One sentence — a bare description. Never start with "Image of", "Photo of", "Picture of", "An image shows", "The image shows", "The image features", "The image showcases", "The image depicts", "In this image", "This image", or any similar framing. Just describe what is there.';
+			. '- One sentence — a bare description. Do not include labels like "Informative:". Never start with "Image of", "Photo of", "Picture of", "An image shows", "The image shows", "The image features", "The image showcases", "The image depicts", "In this image", "This image", or any similar framing. Just describe what is there.';
 	}
 
 	/**
@@ -256,9 +263,9 @@ class AutoAlt_Processor {
 		return 'You are an accessibility expert comparing two alt text entries for the same image. Your decisions must follow the W3C "An alt Decision Tree" (decorative vs functional vs informative vs complex images).' . "\n\n"
 			. 'Core rule: Alt text must convey the information or purpose the image serves. If the image disappeared, what would be lost for someone who cannot see it — that belongs in alt text (or empty alt when nothing should be announced).' . "\n\n"
 			. 'Follow this order:' . "\n"
-			. '1) Decorative/redundant → output: [[DECORATIVE_ALT]] (empty alt). Do not describe decorative images.' . "\n"
-			. '2) Functional → short text describing the action or destination.' . "\n"
-			. '3) Informative → convey the information, not every pixel.' . "\n\n"
+			. '1) Decorative/redundant → output: [[DECORATIVE_ALT]] (empty alt). Do not describe decorative images, and do not include labels like "Decorative:".' . "\n"
+			. '2) Functional → short text describing the action or destination. Do not include labels like "Functional:".' . "\n"
+			. '3) Informative → convey the information, not every pixel. Do not include labels like "Informative:".' . "\n\n"
 			. 'OLD (existing alt text): presented for reference.' . "\n"
 			. 'NEW (freshly generated from the image): may or may not be correct.' . "\n\n"
 			. 'Decide what to keep:' . "\n"
@@ -269,6 +276,7 @@ class AutoAlt_Processor {
 			. 'Rules:' . "\n"
 			. '- Under 125 characters, one sentence, describe only visible content.' . "\n"
 			. '- Do NOT wrap the output in quotes.' . "\n"
+			. '- Never include labels like "Informative:", "Decorative:", or "Functional:".' . "\n"
 			. '- Never start with "Image of", "Photo of", "Picture of", "An image shows", "The image shows", "The image features", "The image showcases", "The image depicts", "In this image", "This image", or any similar framing.' . "\n"
 			. '- Avoid "appears", "seems", "suggests".' . "\n"
 			. 'Output exactly one line — the final alt text. Nothing else.';
