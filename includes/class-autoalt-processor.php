@@ -191,7 +191,11 @@ class AutoAlt_Processor {
 		$alt_text = sanitize_text_field( $alt_text );
 		$alt_text = preg_replace( '/^["\'\x{2018}\x{2019}\x{201C}\x{201D}]+|["\'\x{2018}\x{2019}\x{201C}\x{201D}]+$/u', '', $alt_text );
 		$alt_text = preg_replace( '/^(?:An?|The)\s+(?:image|photo|picture|shot|scene|view)(?:\s+(?:shows?|features?|depicts?|showcases?|displays?|presents?|captures?|of|with|in))?\s+/i', '', $alt_text );
-		$alt_text = preg_replace( '/^(?:Informative|Decorative|Functional):\s+/i', '', $alt_text );
+		
+		// Aggressive label stripping
+		$alt_text = preg_replace( '/^(?:Informative|Decorative|Functional)(?:\s+alt)?(?::|\s+)?\s*/i', '', $alt_text );
+		$alt_text = preg_replace( '/^Output:\s+/i', '', $alt_text );
+		$alt_text = preg_replace( '/\[\[DE.*ALT\]\]/i', '[[DECORATIVE_ALT]]', $alt_text );
 
 		if ( strlen( $alt_text ) > 125 ) {
 			$alt_text = substr( $alt_text, 0, 125 );
@@ -226,23 +230,73 @@ class AutoAlt_Processor {
 	 * @return string
 	 */
 	public function default_compare_prompt() {
-		return 'You are an accessibility expert generating the final alt text for an image. You receive contextual information, any existing alt text, and a raw visual description.' . "\n\n"
-			. 'Follow the W3C Alt Decision Tree in this exact order:' . "\n"
-			. '1) Decorative or redundant → output [[DECORATIVE_ALT]] only.' . "\n"
-			. '2) Functional → output a short action or destination phrase.' . "\n"
-			. '3) Informative → output one concise sentence conveying essential information.' . "\n"
-			. '4) Complex → output one short summary sentence capturing the main point.' . "\n\n"
-			. 'CORE PRINCIPLE:' . "\n"
-			. 'Alt text conveys the information or purpose the image serves in THIS context. If removing the image removes no meaningful information, output [[DECORATIVE_ALT]].' . "\n\n"
-			. 'HARD OUTPUT RULES:' . "\n"
-			. '- Output exactly ONE sentence under 125 characters.' . "\n"
-			. '- Output ONLY the final alt text. No explanations.' . "\n"
-			. '- Do NOT wrap in quotes.' . "\n"
-			. '- Do NOT include labels like "Informative:" or "Functional:".' . "\n"
-			. '- Do NOT start with: "Image of", "Photo of", "Picture of", "An image shows", "The image shows", "This image", or similar.' . "\n"
-			. '- Do NOT use "appears", "seems", "suggests", or uncertainty language.' . "\n"
-			. '- If you violate ANY rule, output [[DECORATIVE_ALT]].' . "\n\n"
-			. 'Your job is to synthesize the context and the visual description to determine the correct alt text category and produce the final output.';
+		return 'You are an AI formatter. Input: Image Context + Visual Description. Output: Final Alt Text string.' . "\n\n"
+			. 'Rules for Output:' . "\n"
+			. '1. If the image is decorative or redundant, output only: [[DECORATIVE_ALT]]' . "\n"
+			. '2. Otherwise, output ONE sentence describing the image based on context.' . "\n"
+			. '3. STRICT FORBIDDEN LIST: Do not include labels like "Informative:", "Output:", "Functional:", "Alt:".' . "\n"
+			. '4. Do not start with: "Image of", "Photo of", "Picture of", "An image shows", "The image features".' . "\n"
+			. '5. Max 125 characters. No quotes. No preamble. No explanations.' . "\n\n"
+			. 'EXAMPLE:' . "\n"
+			. 'CONTEXT:' . "\n"
+			. 'Caption: Woman in garden' . "\n"
+			. 'Post Title: Spring Gardening Tips' . "\n"
+			. 'Article Title: 5 Tips for Spring' . "\n"
+			. 'Article Excerpt: Spring is the best time to plant vegetables.' . "\n"
+			. 'Existing Alt: ' . "\n"
+			. 'VISUAL DESCRIPTION: A woman in a sun hat planting tomato seedlings in raised garden beds.' . "\n"
+			. 'A woman planting tomato seedlings in raised garden beds during spring.' . "\n\n"
+			. 'Synthesize the input into a single clean string. If the input is confusing, default to: [[DECORATIVE_ALT]]';
+	}
+
+	/**
+	 * Sanitize input value: remove boilerplate, short strings, and noise.
+	 *
+	 * @param string $value Raw input.
+	 * @return string Sanitized value or empty string.
+	 */
+	private function sanitize_input( $value ) {
+		if ( ! is_string( $value ) ) {
+			return '';
+		}
+
+		$value = wp_strip_all_tags( $value );
+		$value = trim( $value );
+		$value = preg_replace( '/\s+/', ' ', $value );
+
+		// Too short to be useful.
+		if ( mb_strlen( $value ) < 5 ) {
+			return '';
+		}
+
+		// Blacklist common garbage values.
+		$blacklist = array(
+			'img_',
+			'dsc_',
+			'file_',
+			'image',
+			'photo',
+			'picture',
+			'placeholder',
+			'untitled',
+			'default',
+			'no alt',
+			'no description',
+			'no title',
+		);
+
+		$lower = mb_strtolower( $value );
+		foreach ( $blacklist as $bad ) {
+			if ( 0 === strpos( $lower, $bad ) ) {
+				return '';
+			}
+			// Match whole word (e.g., "image" alone)
+			if ( $lower === $bad ) {
+				return '';
+			}
+		}
+
+		return $value;
 	}
 
 	/**
@@ -255,18 +309,19 @@ class AutoAlt_Processor {
 		$post = get_post( $attachment_id );
 		$parent_id = $post ? (int) $post->post_parent : 0;
 		$context = array(
-			'caption'         => $post ? (string) $post->post_excerpt : '',
-			'title'           => $post ? (string) $post->post_title : '',
+			'caption'         => $this->sanitize_input( $post ? (string) $post->post_excerpt : '' ),
+			'title'           => $this->sanitize_input( $post ? (string) $post->post_title : '' ),
 			'article_title'   => '',
 			'article_excerpt' => '',
-			'existing_alt'    => (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ),
+			'existing_alt'    => $this->sanitize_input( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ),
 		);
 
 		if ( $parent_id ) {
 			$parent = get_post( $parent_id );
 			if ( $parent ) {
-				$context['article_title']   = $parent->post_title;
-				$context['article_excerpt'] = mb_substr( wp_strip_all_tags( $parent->post_content ), 0, 500 );
+				$context['article_title']   = $this->sanitize_input( $parent->post_title );
+				// Limit excerpt to ~1000 characters to stay safe within 1-3B model context limits
+				$context['article_excerpt'] = $this->sanitize_input( mb_substr( wp_strip_all_tags( $parent->post_content ), 0, 1000 ) );
 			}
 		}
 		return $context;
@@ -296,13 +351,30 @@ class AutoAlt_Processor {
 		$custom = get_option( 'autoalt_compare_prompt', '' );
 		if ( ! empty( trim( $custom ) ) ) {
 			$system = $custom;
+			// Replace user placeholders with actual context values
+			$system = str_replace(
+				array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{existing_alt}', '{visual_desc}' ),
+				array( $context['caption'], $context['title'], $context['article_title'], $context['article_excerpt'], $context['existing_alt'], $new_alt ),
+				$system
+			);
 		} else {
 			$system = $this->default_compare_prompt();
 		}
 
-		$prompt = "CONTEXT:\n" . print_r( $context, true ) . "\n\n" .
-		          "VISUAL DESCRIPTION:\n\"{$new_alt}\"\n\n" .
+		$prompt = "CONTEXT:\n" .
+		          "Caption: " . $context['caption'] . "\n" .
+		          "Post Title: " . $context['title'] . "\n" .
+		          "Article Title: " . $context['article_title'] . "\n" .
+		          "Article Excerpt: " . $context['article_excerpt'] . "\n" .
+		          "Existing Alt: " . $context['existing_alt'] . "\n\n" .
+		          "VISUAL DESCRIPTION:\n" . $new_alt . "\n\n" .
 		          "Generate the final alt text following all system rules.";
+
+		if ( '1' === get_option( 'autoalt_debug_mode', '0' ) ) {
+			error_log( '--- AUTOALT PROMPT DEBUG ---' );
+			error_log( 'SYSTEM: ' . $system );
+			error_log( 'PROMPT: ' . $prompt );
+		}
 
 		$result = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system )

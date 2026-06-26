@@ -45,6 +45,10 @@ class AutoAlt_Admin {
 		add_action( 'admin_menu', array( $this, 'add_processing_page' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'wp_ajax_autoalt_process_single', array( $this, 'ajax_process_single' ) );
+
+	/** Responsive form table max-height fix */
+	<style id="autoalt-responsive-form"></style>
+	<script>(document).ready(function(){$('.wrap .form-table td[scope=row]').css({maxHeight:'50vh'}).find('th,td').each(function(){$(this).attr('data-rowscope'?)$(this).css(maxHeight:48vh):void 0;});$('.description').css(width:'100%');});</script>
 		add_action( 'wp_ajax_autoalt_undo', array( $this, 'ajax_undo' ) );
 		add_action( 'wp_ajax_autoalt_get_ids', array( $this, 'ajax_get_ids' ) );
 		add_action( 'wp_ajax_autoalt_create_job', array( $this, 'ajax_create_job' ) );
@@ -198,8 +202,9 @@ class AutoAlt_Admin {
 		/** @var array{is_running: bool, completed: bool, mode: string, processed: int, total: int, failed: int}|false $job */
 		$job    = get_option( 'autoalt_job_status', false );
 		?>
-		<div class="wrap">
+			<div class="wrap" style="max-width: 1000px; box-sizing: border-box;">
 			<h1><?php esc_html_e( 'Auto Alt Text Processing', 'auto-alt-text-generator' ); ?></h1>
+
 
 			<div class="notice notice-info" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;">
 				<p style="margin:8px 0;">
@@ -479,6 +484,22 @@ class AutoAlt_Admin {
 								<?php esc_html_e( 'Override the default system instruction sent to the AI model. Use few-shot examples to improve output quality from smaller models. Leave empty to use the built-in prompt.', 'auto-alt-text-generator' ); ?>
 							</p>
 							<details style="margin-top:8px;">
+								<details style="margin-top:8px;">
+								<summary><?php esc_html_e( 'Available variables for System Prompt', 'auto-alt-text-generator' ); ?></summary>
+								<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;color:#666;">
+Available context variables for your custom prompt:
+{caption}         - Image caption (post_excerpt)
+{title}           - Image title (post_title)
+{article_title}   - Parent post title
+{article_excerpt} - Parent post excerpt (first 1000 chars)
+{existing_alt}    - Current alt text in database
+{visual_desc}     - Raw output from Vision model
+
+Usage: Just include these placeholders in your prompt text.
+Example: "The image is about {article_title}. Visual: {visual_desc}"
+								</pre>
+							</details>
+							<details style="margin-top:8px;">
 								<summary><?php esc_html_e( 'Default prompt (click to expand)', 'auto-alt-text-generator' ); ?></summary>
 								<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;">
 								<?php
@@ -501,6 +522,21 @@ class AutoAlt_Admin {
 							<p class="description">
 								<?php esc_html_e( 'System instruction for the text-only comparison step (Review mode). Given old and new alt text, it decides which to keep or combines both. Leave empty to use the built-in default.', 'auto-alt-text-generator' ); ?>
 							</p>
+							<details style="margin-top:8px;">
+								<summary><?php esc_html_e( 'Available variables for Comparison Prompt', 'auto-alt-text-generator' ); ?></summary>
+								<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;color:#666;">
+Available context variables for your custom prompt:
+{caption}         - Image caption (post_excerpt)
+{title}           - Image title (post_title)
+{article_title}   - Parent post title
+{article_excerpt} - Parent post excerpt (first 1000 chars)
+{existing_alt}    - Current alt text in database
+{visual_desc}     - Raw output from Vision model
+
+Usage: Include these placeholders in your prompt text.
+Example: "Context: {article_title}. Visual: {visual_desc}"
+								</pre>
+							</details>
 							<details style="margin-top:8px;">
 								<summary><?php esc_html_e( 'Default comparison prompt (click to expand)', 'auto-alt-text-generator' ); ?></summary>
 								<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;">
@@ -543,16 +579,20 @@ class AutoAlt_Admin {
 				<?php submit_button(); ?>
 			</form>
 		</div>
-		<?php
-	}
+	<style id="autoalt-responsive-form"></style>
+	<script>(document).ready(function() { $('.wrap .form-table td[scope=row]').css('max-height', '50vh'); $('.wrap .form-table th[rowscope]').css('max-height', '48vh'); });</script>
 
-	/**
-	 * Mark auto-generated attachments with a flag for JS consumption.
-	 *
-	 * @param array      $response   Attachment data for JS.
-	 * @param WP_Post    $attachment Attachment post object.
-	 * @return array
-	 */
+	</div>
+	<?php
+}
+
+/**
+ * Mark auto-generated attachments with a flag for JS consumption.
+ *
+ * @param array      $response   Attachment data for JS.
+ * @param WP_Post    $attachment Attachment post object.
+ * @return array
+ */
 	public function mark_auto_generated( $response, $attachment ) {
 		if ( ! get_option( 'autoalt_show_generated', false ) ) {
 			return $response;
