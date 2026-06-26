@@ -70,7 +70,7 @@ class AutoAlt_Processor {
 			$wpdb->esc_like( 'image/' ) . '%'
 		);
 
-		$row = $wpdb->get_row( $sql, ARRAY_A );
+		$row = $wpdb->get_row( $sql, ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		if ( null === $row ) {
 			return array(
 				'total'    => '0',
@@ -101,11 +101,11 @@ class AutoAlt_Processor {
 			'orderby'          => 'ID',
 			'order'            => 'ASC',
 			'no_found_rows'    => false,
-			'suppress_filters' => true,
+			'suppress_filters' => true, // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters
 		);
 
 		if ( 'missing' === $mode ) {
-			$args['meta_query'] = array(
+			$args['meta_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				'relation' => 'OR',
 				array(
 					'key'     => '_wp_attachment_image_alt',

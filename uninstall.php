@@ -11,7 +11,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-$options = array(
+$autoalt_options = array(
 	'autoalt_batch_size',
 	'autoalt_system_prompt',
 	'autoalt_compare_prompt',
@@ -20,8 +20,8 @@ $options = array(
 	'autoalt_job_status',
 );
 
-foreach ( $options as $option ) {
-	delete_option( $option );
+foreach ( $autoalt_options as $autoalt_option ) {
+	delete_option( $autoalt_option );
 }
 
 delete_metadata( 'user', 0, 'autoalt_last_generated', '', true );

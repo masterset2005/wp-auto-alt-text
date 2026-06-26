@@ -8,7 +8,7 @@ Stable tag: 1.2.0
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Fill missing, review and improve, or regenerate alt text for your entire media library using the WordPress 7.0 AI Client — with one-click quick-action buttons on the Media Library page.
+Fill, review, or regenerate alt text across your entire media library with the WordPress 7.0 AI Client — one-click buttons, background cron, WP-CLI.
 
 == Description ==
 
