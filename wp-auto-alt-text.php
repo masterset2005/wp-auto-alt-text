@@ -18,6 +18,7 @@
  * License URI:  https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:  auto-alt-text
  * Domain Path:  /languages
+ * Update URI:   https://wordpress.org/plugins/auto-alt-text-generator/
  */
 
 defined( 'ABSPATH' ) || exit;

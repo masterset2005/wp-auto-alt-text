@@ -54,7 +54,7 @@ class AutoAlt_Processor {
 	public function get_stats() {
 		global $wpdb;
 
-		return $wpdb->get_row(
+		$sql = $wpdb->prepare(
 			"
 			SELECT
 				COUNT(*) AS total,
@@ -65,9 +65,10 @@ class AutoAlt_Processor {
 			LEFT JOIN {$wpdb->postmeta} m ON p.ID = m.post_id AND m.meta_key = '_wp_attachment_image_alt'
 			WHERE p.post_type = 'attachment'
 			  AND p.post_mime_type LIKE 'image/%'
-		",
-			ARRAY_A
+			"
 		);
+
+		return $wpdb->get_row( $sql, ARRAY_A );
 	}
 
 	/**

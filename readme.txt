@@ -4,7 +4,7 @@ Tags: alt text, accessibility, images, media library, AI
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Fill missing, review and improve, or regenerate alt text for your entire media l
 
 == Description ==
 
-Auto Alt Text Generator adds a **quick-action notice bar** at the top of your Media Library page with one-click buttons to **Fill Missing Alt Text**, **Review & Improve All**, and **Regenerate All**. No image selection needed — just pick your action and go. A settings page under **Media > Auto Alt Text** lets you configure batch size, customize the AI system prompt, and enable auto-generation on upload.
+Auto Alt Text Generator adds a **quick-action notice bar** at the top of your Media Library page with one-click buttons to **Fill Missing Alt Text**, **Review & Improve All**, and **Regenerate All**. No image selection needed — just pick your action and go. A settings page under **Settings > Auto Alt Text** lets you configure batch size, customize the AI system prompt, and enable auto-generation on upload. Run processing in the **background via WP-Cron** or from the **command line with WP-CLI** — no need to keep your browser open for large libraries.
 
 = Features =
 
@@ -26,7 +26,9 @@ Auto Alt Text Generator adds a **quick-action notice bar** at the top of your Me
 * **W3C Alt Decision Tree prompt** — Default system prompt follows the W3C framework: decorative → functional → informative. Returns empty alt for decorative images.
 * **Customizable system prompts** — Separate editable prompts for the vision generation step and the text-only comparison step. Tune both for your specific model.
 * **Auto-generate on upload** — Optional setting to generate alt text automatically when new images are uploaded.
-* **Settings page** — Configure batch size, system prompt, and auto-generation under Media > Auto Alt Text.
+* **Background processing** — Start a job and close the browser. WP-Cron processes your library in batches. Track progress on the admin page.
+* **WP-CLI support** — Run `wp auto-alt process --mode=missing` from the terminal for the fastest possible processing. Includes a progress bar and batch memory management.
+* **Settings page** — Configure batch size, system prompt, and auto-generation under Settings > Auto Alt Text.
 * **Sequential processing** — Images are processed one by one with a visible progress notice and per-image results.
 * **Uses WP 7.0 AI Client** — No third-party API keys required beyond what you configure in Settings > Connectors.
 
@@ -68,27 +70,27 @@ The vision model generates raw alt text from the image. Then a text-only AI call
 
 = Can I customize the AI prompt? =
 
-Yes. Go to **Media > Auto Alt Text** and edit the System Prompt textarea. The default follows the W3C Alt Decision Tree (decorative → functional → informative). You can add few-shot examples tuned for your specific model.
+Yes. Go to **Settings > Auto Alt Text** and edit the System Prompt textarea. The default follows the W3C Alt Decision Tree (decorative → functional → informative). You can add few-shot examples tuned for your specific model.
 
 = Can I auto-generate alt text on upload? =
 
-Yes. Enable **Auto-generate on upload** in Media > Auto Alt Text settings. New images will be processed with the AI model during upload.
+Yes. Enable **Auto-generate on upload** in Settings > Auto Alt Text. New images will be processed with the AI model during upload.
 
 = How many images can I process at once? =
 
-There is no limit. The plugin processes every matching image in your library. Images are fetched in configurable batches (default 5) and processed one at a time with a 300ms delay between calls.
+There is no limit. The plugin processes every matching image in your library. Images are fetched in configurable batches (default 5) and processed one at a time.
+
+= Can I close the browser while processing? =
+
+Yes. Use the **Process in Background** buttons on the processing page — the job runs via WP-Cron and progress is displayed on the admin page. Or use WP-CLI: `wp auto-alt process --mode=missing` from the terminal.
 
 = What if an image fails? =
 
-Failed images are logged with an error message in the processing notice and processing continues with the next image.
+Failed images are logged with an error message and processing continues with the next image. For persistent failures, try running via WP-CLI to see detailed error messages.
 
-= Design Notes =
+= Which AI models work best? =
 
-This plugin is tuned for **small local AI models** (e.g., Ollama with moondream, Llava, Qwen2-VL) where per-call cost is zero and attention to prompt structure has more impact than raw model power.
-
-If you connect a **paid provider** (Anthropic, OpenAI, Google), consider increasing the batch size (Settings > Auto Alt Text) to reduce round-trips, and note that each image still generates one vision API call plus one text-only comparison call per image in Review mode. You may also want to disable auto-generate on upload to control costs.
-
-Users of paid providers should customize both the System Prompt and Comparison Prompt to match the strengths of their chosen model — the defaults favor the kind of explicit instruction-following that smaller models need.
+The plugin works with any provider connected via Settings > Connectors. The default prompts are tuned for **small local models** (e.g., Ollama with moondream, Llava, Qwen2-VL). If you use a **paid provider** (Anthropic, OpenAI, Google), consider increasing the batch size and customizing both the System Prompt and Comparison Prompt to match the model's strengths.
 
 == External Services ==
 
@@ -108,10 +110,19 @@ Supported providers include Anthropic (Claude), Google (Gemini), and OpenAI (GPT
 
 1. Quick-action notice bar at the top of the Media Library page with Fill Missing, Review & Improve, and Regenerate buttons and quality stats.
 2. Processing notice with per-image results showing KEPT, REPLACED, and ADDED decisions and a stop link.
-3. Settings page under Media > Auto Alt Text with batch size, system prompt, and auto-generate options.
+3. Settings page under Settings > Auto Alt Text with batch size, system prompt, and auto-generate options.
 4. Settings > Connectors screen where AI providers are configured.
 
 == Changelog ==
+
+= 1.2.0 =
+* Added WP-CLI command (`wp auto-alt process --mode=missing|review|regenerate`) with progress bar and batch cache flushing.
+* Added background processing via WP-Cron: "Process in Background" buttons on the processing page, scheduled batch events, and a progress bar with cancel support.
+* Added separate Comparison Prompt setting alongside the System Prompt — both independently editable with collapsible default reference.
+* Settings page moved from **Media** to **Settings** menu.
+* Files renamed to WordPress Coding Standards naming convention (`class-autoalt-*.php`).
+* Full PHPStan (level 9) and PHPCS compliance — 0 errors.
+* Minor internal optimizations and documentation cleanup.
 
 = 1.1.0 =
 * Added quick-action notice bar on Media Library page with one-click buttons (no image selection needed).
@@ -137,6 +148,9 @@ Supported providers include Anthropic (Claude), Google (Gemini), and OpenAI (GPT
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Version 1.2.0 adds WP-CLI support, background WP-Cron processing, and a separate Comparison Prompt setting. The settings page has moved from Media to its own page under **Settings > Auto Alt Text**. Internal file names have changed — no action needed on your part.
 
 = 1.1.0 =
 Version 1.1.0 adds a one-click quick-action bar, settings page (batch size, system prompt, auto-generate), two-phase Review mode with text-only comparison, W3C Alt Decision Tree prompt, and quality stats. The bulk action dropdown has been removed — use the quick-action buttons instead.
