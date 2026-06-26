@@ -197,8 +197,8 @@ class AutoAlt_Processor {
 
 		$alt_text = sanitize_text_field( $alt_text );
 
-		// Strip surrounding double or single quotes (common model mistake).
-		$alt_text = preg_replace( '/^["\']+|["\']+$/', '', $alt_text );
+		// Strip surrounding double, single, and smart quotes (common model mistake).
+		$alt_text = preg_replace( '/^["\'\x{2018}\x{2019}\x{201C}\x{201D}]+|["\'\x{2018}\x{2019}\x{201C}\x{201D}]+$/u', '', $alt_text );
 
 		// Strip leading framing like "An image shows", "The image features", etc.
 		$alt_text = preg_replace(
