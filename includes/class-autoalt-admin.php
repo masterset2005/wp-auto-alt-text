@@ -122,7 +122,7 @@ class AutoAlt_Admin {
 			return;
 		}
 
-		$action = isset( $_GET['autoalt_action'] ) ? sanitize_key( $_GET['autoalt_action'] ) : ''; //phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$action = isset( $_GET['autoalt_action'] ) ? sanitize_key( wp_unslash( $_GET['autoalt_action'] ) ) : ''; //phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( ! in_array( $action, array( 'missing', 'review', 'regenerate' ), true ) ) {
 			return;
 		}
@@ -192,7 +192,7 @@ class AutoAlt_Admin {
 	 * @return void
 	 */
 	public function render_processing_page() {
-		$action = isset( $_GET['autoalt_action'] ) ? sanitize_key( $_GET['autoalt_action'] ) : ''; //phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$action = isset( $_GET['autoalt_action'] ) ? sanitize_key( wp_unslash( $_GET['autoalt_action'] ) ) : ''; //phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$stats  = AutoAlt_Processor::init()->get_stats();
 		$job    = get_option( 'autoalt_job_status', false );
 		?>
@@ -661,7 +661,7 @@ class AutoAlt_Admin {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-alt-text' ) ) );
 		}
 
-		$mode   = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : 'missing';
+		$mode   = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : 'missing';
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
 		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 5;
 
@@ -684,7 +684,7 @@ class AutoAlt_Admin {
 		}
 
 		$id   = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
-		$mode = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : 'review';
+		$mode = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : 'review';
 
 		if ( ! $id ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid image ID.', 'auto-alt-text' ) ) );
@@ -708,7 +708,7 @@ class AutoAlt_Admin {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-alt-text' ) ) );
 		}
 
-		$mode = isset( $_POST['mode'] ) ? sanitize_key( $_POST['mode'] ) : 'missing';
+		$mode = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : 'missing';
 		if ( ! in_array( $mode, array( 'missing', 'review', 'regenerate' ), true ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid mode.', 'auto-alt-text' ) ) );
 		}
