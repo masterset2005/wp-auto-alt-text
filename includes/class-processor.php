@@ -109,6 +109,10 @@ class AutoAlt_Processor {
 			return $this->result( $attachment_id, $title, 'error', null, __( 'AI generation failed.', 'auto-alt-text' ) );
 		}
 
+		if ( 'review' === $mode && ! empty( $current_alt ) ) {
+			$alt_text = $this->compare_alt_texts( $current_alt, $alt_text );
+		}
+
 		$alt_text = sanitize_text_field( $alt_text );
 		if ( strlen( $alt_text ) > 125 ) {
 			$alt_text = substr( $alt_text, 0, 125 );
@@ -157,6 +161,30 @@ class AutoAlt_Processor {
 		$prompt = 'Generate concise, descriptive alt text for this image.';
 
 		return array( $prompt, $system );
+	}
+
+	private function compare_alt_texts( $old, $new ) {
+		$prompt = "Compare these two alt text entries for the same image.\n\n"
+			. "OLD: \"{$old}\"\n"
+			. "NEW: \"{$new}\"\n\n"
+			. "Pick the better one, or write a new one combining the best of both.\n"
+			. "Return ONLY the final alt text — nothing else.";
+
+		$system  = 'You are an alt text quality checker. ';
+		$system .= 'Keep it under 125 characters. ';
+		$system .= 'One sentence. Describe only visible objects. ';
+		$system .= 'Avoid "appears", "seems", "suggests". ';
+		$system .= 'Output exactly one line — the final alt text.';
+
+		$result = wp_ai_client_prompt( $prompt )
+			->using_system_instruction( $system )
+			->generate_text();
+
+		if ( is_wp_error( $result ) ) {
+			return $new;
+		}
+
+		return trim( $result );
 	}
 
 	private function result( $id, $title, $status, $generated = null, $error = null, $reason = null ) {
