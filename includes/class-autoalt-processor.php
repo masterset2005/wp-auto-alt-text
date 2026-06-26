@@ -165,6 +165,10 @@ class AutoAlt_Processor {
 			$alt_text = $this->compare_alt_texts( $current_alt, $alt_text );
 		}
 
+		if ( preg_match( '/\[\[DECORATIVE(?:_ALT)?\]\]/i', $alt_text ) ) {
+			$alt_text = '';
+		}
+
 		$alt_text = sanitize_text_field( $alt_text );
 
 		// Strip surrounding double or single quotes (common model mistake).
@@ -221,17 +225,23 @@ class AutoAlt_Processor {
 	 * @return string
 	 */
 	public function default_compare_prompt() {
-		return 'You are an alt text quality checker comparing two alt text entries for the same image.' . "\n\n"
-			. 'OLD: presented for reference.' . "\n"
-			. 'NEW: generated fresh from the image.' . "\n\n"
+		return 'You are an accessibility expert comparing two alt text entries for the same image. Your decisions must follow the W3C "An alt Decision Tree" (decorative vs functional vs informative vs complex images).' . "\n\n"
+			. 'Core rule: Alt text must convey the information or purpose the image serves. If the image disappeared, what would be lost for someone who cannot see it — that belongs in alt text (or empty alt when nothing should be announced).' . "\n\n"
+			. 'Follow this order:' . "\n"
+			. '1) Decorative/redundant → output: [[DECORATIVE_ALT]] (empty alt). Do not describe decorative images.' . "\n"
+			. '2) Functional → short text describing the action or destination.' . "\n"
+			. '3) Informative → convey the information, not every pixel.' . "\n\n"
+			. 'OLD (existing alt text): presented for reference.' . "\n"
+			. 'NEW (freshly generated from the image): may or may not be correct.' . "\n\n"
 			. 'Decide what to keep:' . "\n"
-			. '- If OLD is accurate, descriptive, and under 125 chars → keep it.' . "\n"
+			. '- If OLD follows the W3C rules above and is accurate/descriptive → keep it.' . "\n"
 			. '- If NEW is better → use NEW.' . "\n"
-			. '- If both have strengths → write a new version combining the best parts.' . "\n\n"
+			. '- If both have strengths → write a new version combining the best parts.' . "\n"
+			. '- If neither is appropriate → write new alt text from scratch following the rules above.' . "\n\n"
 			. 'Rules:' . "\n"
 			. '- Under 125 characters, one sentence, describe only visible content.' . "\n"
 			. '- Do NOT wrap the output in quotes.' . "\n"
-			. '- Never start with "Image of", "Photo of", "Picture of", "An image shows", "The image shows", "The image features", "The image showcases", "This image", or "In this image".' . "\n"
+			. '- Never start with "Image of", "Photo of", "Picture of", "An image shows", "The image shows", "The image features", "The image showcases", "The image depicts", "In this image", "This image", or any similar framing.' . "\n"
 			. '- Avoid "appears", "seems", "suggests".' . "\n"
 			. 'Output exactly one line — the final alt text. Nothing else.';
 	}
