@@ -31,6 +31,10 @@ Uses the **WordPress 7.0 AI Client** to automatically generate, review, and impr
 3. Go to **Settings > Connectors** and connect an AI provider
 4. Go to **Media > Library** and use the quick-action buttons, or configure settings under **Media > Auto Alt Text**
 
+## Design Notes
+
+This plugin is tuned for **small local AI models** (Ollama + moondream, Llava, etc.) where per-call cost is zero. If using a paid provider, increase batch size and customize prompts — each image generates one vision call plus one text-only comparison call in Review mode.
+
 ## License
 
 GPL v2 or later

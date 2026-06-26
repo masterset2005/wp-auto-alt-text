@@ -82,9 +82,13 @@ There is no limit. The plugin processes every matching image in your library. Im
 
 Failed images are logged with an error message in the processing notice and processing continues with the next image.
 
-= Will the AI generate good alt text? =
+= Design Notes =
 
-The default system prompt follows the W3C Alt Decision Tree framework. You should always review AI-generated alt text for critical content. You can improve output quality by customizing the system prompt with examples that work for your specific AI model.
+This plugin is tuned for **small local AI models** (e.g., Ollama with moondream, Llava, Qwen2-VL) where per-call cost is zero and attention to prompt structure has more impact than raw model power.
+
+If you connect a **paid provider** (Anthropic, OpenAI, Google), consider increasing the batch size (Settings > Auto Alt Text) to reduce round-trips, and note that each image still generates one vision API call plus one text-only comparison call per image in Review mode. You may also want to disable auto-generate on upload to control costs.
+
+Users of paid providers should customize both the System Prompt and Comparison Prompt to match the strengths of their chosen model — the defaults favor the kind of explicit instruction-following that smaller models need.
 
 == External Services ==
 
