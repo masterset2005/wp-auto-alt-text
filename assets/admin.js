@@ -122,6 +122,7 @@
 
 		$entry.append($body);
 		$entry.append('<button class="autoalt-redo-btn" data-attachment-id="' + r.id + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#2271b1;">redo</button>');
+		$entry.append('<button class="autoalt-undo-btn" data-attachment-id="' + r.id + '" data-previous="' + (r.previous || '').replace(/"/g, '&quot;') + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#2271b1;">undo</button>');
 		$entry.data('attachment-id', r.id);
 
 		return $entry;
@@ -158,6 +159,41 @@
 			},
 			error: function () {
 				$btn.text('redo').prop('disabled', false);
+				$entry.css('opacity', '1');
+			},
+		});
+	});
+
+	$(document).on('click', '.autoalt-undo-btn', function () {
+		var $btn = $(this);
+		var $entry = $btn.closest('.autoalt-entry');
+		var id = $btn.data('attachment-id');
+		var alt = $btn.data('previous');
+		if (!id) return;
+
+		$btn.text('...').prop('disabled', true);
+		$entry.css('opacity', '0.5');
+
+		$.ajax({
+			url: data.ajaxUrl,
+			method: 'POST',
+			data: {
+				action: 'autoalt_undo',
+				nonce: data.nonce,
+				id: id,
+				alt: alt,
+			},
+			success: function (response) {
+				var r = response.data;
+				// Update entry to indicate it was undone
+				$entry.css('opacity', '1');
+				$entry.css('background', '#f6f7f7').css('border-left', '3px solid #c3c4c7');
+				$entry.find('.autoalt-redo-btn').remove();
+				$entry.find('.autoalt-undo-btn').remove();
+				$entry.find('div:last').text('#' + r.id + ' (Reverted to: "' + r.alt.substring(0, 100) + '")');
+			},
+			error: function () {
+				$btn.text('undo').prop('disabled', false);
 				$entry.css('opacity', '1');
 			},
 		});

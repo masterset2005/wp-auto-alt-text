@@ -45,6 +45,7 @@ class AutoAlt_Admin {
 		add_action( 'admin_menu', array( $this, 'add_processing_page' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'wp_ajax_autoalt_process_single', array( $this, 'ajax_process_single' ) );
+		add_action( 'wp_ajax_autoalt_undo', array( $this, 'ajax_undo' ) );
 		add_action( 'wp_ajax_autoalt_get_ids', array( $this, 'ajax_get_ids' ) );
 		add_action( 'wp_ajax_autoalt_create_job', array( $this, 'ajax_create_job' ) );
 		add_action( 'wp_ajax_autoalt_job_status', array( $this, 'ajax_job_status' ) );
@@ -695,6 +696,38 @@ class AutoAlt_Admin {
 		$result    = $processor->process_single( $id, $mode );
 
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: undo the last alt text change.
+	 *
+	 * @return void
+	 */
+	public function ajax_undo() {
+		check_ajax_referer( 'autoalt_process', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-alt-text-generator' ) ) );
+		}
+
+		$id   = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+		$alt  = isset( $_POST['alt'] ) ? sanitize_text_field( wp_unslash( $_POST['alt'] ) ) : '';
+
+		if ( ! $id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid image ID.', 'auto-alt-text-generator' ) ) );
+		}
+
+		update_post_meta( $id, '_wp_attachment_image_alt', $alt );
+
+		$url = wp_get_attachment_image_url( $id, array( 40, 40 ) );
+
+		wp_send_json_success( array(
+			'id'        => $id,
+			'alt'       => $alt,
+			'status'    => 'success',
+			'reason'    => __( 'Reverted.', 'auto-alt-text-generator' ),
+			'thumbnail' => $url ? $url : '',
+		) );
 	}
 
 	/**
