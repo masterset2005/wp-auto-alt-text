@@ -163,6 +163,7 @@ class AutoAlt_Processor {
 				'previous'  => $current_alt,
 				'generated' => $current_alt,
 				'changed'   => false,
+				'thumbnail' => $this->thumbnail_url( $attachment_id ),
 			);
 		}
 
@@ -220,6 +221,7 @@ class AutoAlt_Processor {
 			'previous'  => ! empty( $current_alt ) ? $current_alt : '',
 			'generated' => $alt_text,
 			'changed'   => $changed,
+			'thumbnail' => $this->thumbnail_url( $attachment_id ),
 		);
 	}
 
@@ -328,11 +330,34 @@ class AutoAlt_Processor {
 	 * @param string|null $reason    Skip reason.
 	 * @return array
 	 */
+	/**
+	 * Get the admin thumbnail URL for an attachment.
+	 *
+	 * @param int $id Attachment ID.
+	 * @return string
+	 */
+	private function thumbnail_url( $id ) {
+		$url = wp_get_attachment_image_url( $id, array( 40, 40 ) );
+		return $url ? $url : '';
+	}
+
+	/**
+	 * Build a result array for process_single().
+	 *
+	 * @param int         $id        Attachment ID.
+	 * @param string      $title     Attachment title.
+	 * @param string      $status    success|error|skipped.
+	 * @param string|null $generated Generated alt text.
+	 * @param string|null $error     Error message.
+	 * @param string|null $reason    Skip reason.
+	 * @return array
+	 */
 	private function result( $id, $title, $status, $generated = null, $error = null, $reason = null ) {
 		$r = array(
-			'id'     => $id,
-			'title'  => $title,
-			'status' => $status,
+			'id'        => $id,
+			'title'     => $title,
+			'status'    => $status,
+			'thumbnail' => $this->thumbnail_url( $id ),
 		);
 		if ( null !== $generated ) {
 			$r['generated'] = $generated;

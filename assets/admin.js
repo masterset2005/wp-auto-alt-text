@@ -86,37 +86,82 @@
 		stop(true);
 	});
 
-	function addEntry(r) {
-		var $entry = $('<div style="padding:3px 6px;margin:1px 0;border-radius:2px;">');
-		var text;
+	function buildEntry(r) {
+		var $entry = $('<div class="autoalt-entry" style="display:flex;align-items:flex-start;gap:8px;padding:4px 6px;margin:1px 0;border-radius:2px;">');
+
+		var thumbUrl = r.thumbnail || '';
+		if (thumbUrl) {
+			$entry.append('<img src="' + thumbUrl + '" style="width:40px;height:40px;object-fit:cover;border-radius:2px;flex-shrink:0;margin-top:2px;">');
+		} else {
+			$entry.append('<span style="width:40px;height:40px;flex-shrink:0;background:#f0f0f1;border-radius:2px;display:inline-block;"></span>');
+		}
+
+		var $body = $('<div style="flex:1;white-space:pre-wrap;word-break:break-word;">');
 
 		if (r.status === 'success') {
 			var cur = r.previous ? r.previous.substring(0, 200) : '';
 			var gen = (r.generated || '(decorative)').substring(0, 200);
 
 			if (r.changed && cur) {
-				text = '#' + r.id + ' ' + (r.title || '') + ' → REPLACED\n  was: "' + cur + '"\n  now: "' + gen + '"';
+				$body.text('#' + r.id + ' ' + (r.title || '') + ' → REPLACED\n  was: "' + cur + '"\n  now: "' + gen + '"');
 				$entry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
 			} else if (r.changed) {
-				text = '#' + r.id + ' ' + (r.title || '') + ' + ADDED\n  alt: "' + gen + '"';
+				$body.text('#' + r.id + ' ' + (r.title || '') + ' + ADDED\n  alt: "' + gen + '"');
 				$entry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
 			} else {
-				text = '#' + r.id + ' ' + (r.title || '') + ' ✓ KEPT\n  alt: "' + gen + '"';
+				$body.text('#' + r.id + ' ' + (r.title || '') + ' ✓ KEPT\n  alt: "' + gen + '"');
 				$entry.css('background', '#fef8ee').css('border-left', '3px solid #dba617');
 			}
 		} else if (r.status === 'error') {
-			text = '#' + r.id + ' ' + (r.title || '') + ' ✗ ' + (r.error || 'Error');
+			$body.text('#' + r.id + ' ' + (r.title || '') + ' ✗ ' + (r.error || 'Error'));
 			$entry.css('background', '#fcf0f1').css('border-left', '3px solid #d63638');
 		} else {
-			text = '#' + r.id + ' ' + (r.title || '') + ' — ' + (r.reason || 'Skipped');
+			$body.text('#' + r.id + ' ' + (r.title || '') + ' — ' + (r.reason || 'Skipped'));
 			$entry.css('background', '#f6f7f7').css('border-left', '3px solid #c3c4c7');
 		}
 
-		$entry.css('white-space', 'pre-wrap').css('word-break', 'break-word');
-		$entry.text(text);
+		$entry.append($body);
+		$entry.append('<button class="autoalt-redo-btn" data-attachment-id="' + r.id + '" style="flex-shrink:0;font-size:11px;padding:1px 6px;cursor:pointer;background:none;border:1px solid #c3c4c7;border-radius:2px;color:#2271b1;">redo</button>');
+		$entry.data('attachment-id', r.id);
+
+		return $entry;
+	}
+
+	function addEntry(r) {
+		var $entry = buildEntry(r);
 		$resultsContainer.append($entry);
 		$resultsContainer.scrollTop($resultsContainer[0].scrollHeight);
 	}
+
+	$(document).on('click', '.autoalt-redo-btn', function () {
+		var $btn = $(this);
+		var $entry = $btn.closest('.autoalt-entry');
+		var id = $entry.data('attachment-id');
+		if (!id) return;
+
+		$btn.text('...').prop('disabled', true);
+		$entry.css('opacity', '0.5');
+
+		$.ajax({
+			url: data.ajaxUrl,
+			method: 'POST',
+			data: {
+				action: 'autoalt_process_single',
+				nonce: data.nonce,
+				id: id,
+				mode: mode,
+			},
+			success: function (response) {
+				var r = response.data;
+				var $newEntry = buildEntry(r);
+				$entry.replaceWith($newEntry);
+			},
+			error: function () {
+				$btn.text('redo').prop('disabled', false);
+				$entry.css('opacity', '1');
+			},
+		});
+	});
 
 	function updateSummary() {
 		hideStopLink();
