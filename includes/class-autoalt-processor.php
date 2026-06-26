@@ -41,7 +41,7 @@ class AutoAlt_Processor {
 		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
 			deactivate_plugins( plugin_basename( AUTOALT_PLUGIN_DIR . 'wp-auto-alt-text.php' ) );
 			wp_die(
-				esc_html__( 'Auto Alt Text Generator requires WordPress 7.0 or later.', 'auto-alt-text' )
+				esc_html__( 'Auto Alt Text Generator requires WordPress 7.0 or later.', 'auto-alt-text-generator' )
 			);
 		}
 	}
@@ -64,9 +64,10 @@ class AutoAlt_Processor {
 			FROM {$wpdb->posts} p
 			LEFT JOIN {$wpdb->postmeta} m ON p.ID = m.post_id AND m.meta_key = '_wp_attachment_image_alt'
 			WHERE p.post_type = 'attachment'
-			  AND p.post_mime_type LIKE 'image/%'
+			  AND p.post_mime_type LIKE %s
 			  AND p.post_mime_type != 'image/svg+xml'
-			"
+			",
+			$wpdb->esc_like( 'image/' ) . '%'
 		);
 
 		$row = $wpdb->get_row( $sql, ARRAY_A );
@@ -139,19 +140,19 @@ class AutoAlt_Processor {
 		$title       = get_the_title( $attachment_id );
 
 		if ( ! $file || ! file_exists( $file ) ) {
-			return $this->result( $attachment_id, $title, 'error', null, __( 'File not found on server.', 'auto-alt-text' ) );
+			return $this->result( $attachment_id, $title, 'error', null, __( 'File not found on server.', 'auto-alt-text-generator' ) );
 		}
 
 		if ( ! str_starts_with( $mime, 'image/' ) ) {
-			return $this->result( $attachment_id, $title, 'skipped', null, null, __( 'Not an image.', 'auto-alt-text' ) );
+			return $this->result( $attachment_id, $title, 'skipped', null, null, __( 'Not an image.', 'auto-alt-text-generator' ) );
 		}
 
 		if ( 'image/svg+xml' === $mime ) {
-			return $this->result( $attachment_id, $title, 'skipped', null, null, __( 'SVG images are not supported.', 'auto-alt-text' ) );
+			return $this->result( $attachment_id, $title, 'skipped', null, null, __( 'SVG images are not supported.', 'auto-alt-text-generator' ) );
 		}
 
 		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
-			return $this->result( $attachment_id, $title, 'error', null, __( 'AI Client not available.', 'auto-alt-text' ) );
+			return $this->result( $attachment_id, $title, 'error', null, __( 'AI Client not available.', 'auto-alt-text-generator' ) );
 		}
 
 		if ( 'missing' === $mode && ! empty( $current_alt ) ) {
@@ -159,7 +160,7 @@ class AutoAlt_Processor {
 				'id'        => $attachment_id,
 				'title'     => $title,
 				'status'    => 'skipped',
-				'reason'    => __( 'Already has alt text.', 'auto-alt-text' ),
+				'reason'    => __( 'Already has alt text.', 'auto-alt-text-generator' ),
 				'previous'  => $current_alt,
 				'generated' => $current_alt,
 				'changed'   => false,
@@ -178,7 +179,7 @@ class AutoAlt_Processor {
 			$msg = $alt_text->get_error_message();
 			return $this->result( $attachment_id, $title, 'error', null, sprintf(
 				/* translators: %s: error message from AI provider */
-				__( 'AI generation failed: %s', 'auto-alt-text' ),
+				__( 'AI generation failed: %s', 'auto-alt-text-generator' ),
 				$msg
 			) );
 		}

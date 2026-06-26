@@ -83,29 +83,29 @@ class AutoAlt_Admin {
 		<div class="notice notice-info" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;">
 			<p style="margin:8px 0;">
 				<strong><?php echo esc_html( $stats['missing'] ); ?></strong>
-				<?php esc_html_e( 'missing', 'auto-alt-text' ); ?>
+				<?php esc_html_e( 'missing', 'auto-alt-text-generator' ); ?>
 				&middot;
 				<strong><?php echo esc_html( $stats['too_long'] ); ?></strong>
-				<?php esc_html_e( 'too long', 'auto-alt-text' ); ?>
+				<?php esc_html_e( 'too long', 'auto-alt-text-generator' ); ?>
 				&middot;
 				<strong><?php echo esc_html( $stats['too_short'] ); ?></strong>
-				<?php esc_html_e( 'too short', 'auto-alt-text' ); ?>
+				<?php esc_html_e( 'too short', 'auto-alt-text-generator' ); ?>
 				&middot;
 				<strong><?php echo esc_html( $stats['total'] ); ?></strong>
-				<?php esc_html_e( 'total images', 'auto-alt-text' ); ?>
+				<?php esc_html_e( 'total images', 'auto-alt-text-generator' ); ?>
 				&middot;
-				<a href="admin.php?page=autoalt-processing"><?php esc_html_e( 'Process', 'auto-alt-text' ); ?></a>
+				<a href="admin.php?page=autoalt-processing"><?php esc_html_e( 'Process', 'auto-alt-text-generator' ); ?></a>
 			</p>
 			<?php if ( (int) $stats['missing'] ) : ?>
 				<a href="admin.php?page=autoalt-processing&autoalt_action=missing" class="button button-primary">
-					<?php esc_html_e( 'Fill Missing Alt Text', 'auto-alt-text' ); ?>
+					<?php esc_html_e( 'Fill Missing Alt Text', 'auto-alt-text-generator' ); ?>
 				</a>
 			<?php endif; ?>
 			<a href="admin.php?page=autoalt-processing&autoalt_action=review" class="button">
-				<?php esc_html_e( 'Review & Improve All', 'auto-alt-text' ); ?>
+				<?php esc_html_e( 'Review & Improve All', 'auto-alt-text-generator' ); ?>
 			</a>
 			<a href="admin.php?page=autoalt-processing&autoalt_action=regenerate" class="button">
-				<?php esc_html_e( 'Regenerate All', 'auto-alt-text' ); ?>
+				<?php esc_html_e( 'Regenerate All', 'auto-alt-text-generator' ); ?>
 			</a>
 		</div>
 		<?php
@@ -163,8 +163,8 @@ class AutoAlt_Admin {
 	 */
 	public function add_settings_page() {
 		add_options_page(
-			__( 'Auto Alt Text', 'auto-alt-text' ),
-			__( 'Auto Alt Text', 'auto-alt-text' ),
+			__( 'Auto Alt Text', 'auto-alt-text-generator' ),
+			__( 'Auto Alt Text', 'auto-alt-text-generator' ),
 			'manage_options',
 			'auto-alt-text',
 			array( $this, 'render_settings_page' )
@@ -178,8 +178,8 @@ class AutoAlt_Admin {
 	 */
 	public function add_processing_page() {
 		add_media_page(
-			__( 'Auto Alt Text Processing', 'auto-alt-text' ),
-			__( 'Auto Alt Text Processing', 'auto-alt-text' ),
+			__( 'Auto Alt Text Processing', 'auto-alt-text-generator' ),
+			__( 'Auto Alt Text Processing', 'auto-alt-text-generator' ),
 			'edit_posts',
 			'autoalt-processing',
 			array( $this, 'render_processing_page' )
@@ -197,43 +197,43 @@ class AutoAlt_Admin {
 		$job    = get_option( 'autoalt_job_status', false );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Auto Alt Text Processing', 'auto-alt-text' ); ?></h1>
+			<h1><?php esc_html_e( 'Auto Alt Text Processing', 'auto-alt-text-generator' ); ?></h1>
 
 			<div class="notice notice-info" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;">
 				<p style="margin:8px 0;">
 					<strong><?php echo esc_html( $stats['missing'] ); ?></strong>
-					<?php esc_html_e( 'missing', 'auto-alt-text' ); ?>
+					<?php esc_html_e( 'missing', 'auto-alt-text-generator' ); ?>
 					&middot;
 					<strong><?php echo esc_html( $stats['too_long'] ); ?></strong>
-					<?php esc_html_e( 'too long', 'auto-alt-text' ); ?>
+					<?php esc_html_e( 'too long', 'auto-alt-text-generator' ); ?>
 					&middot;
 					<strong><?php echo esc_html( $stats['too_short'] ); ?></strong>
-					<?php esc_html_e( 'too short', 'auto-alt-text' ); ?>
+					<?php esc_html_e( 'too short', 'auto-alt-text-generator' ); ?>
 					&middot;
 					<strong><?php echo esc_html( $stats['total'] ); ?></strong>
-					<?php esc_html_e( 'total images', 'auto-alt-text' ); ?>
+					<?php esc_html_e( 'total images', 'auto-alt-text-generator' ); ?>
 				</p>
 				<?php if ( (int) $stats['missing'] ) : ?>
 					<a href="admin.php?page=autoalt-processing&autoalt_action=missing" class="button button-primary">
-						<?php esc_html_e( 'Fill Missing Alt Text', 'auto-alt-text' ); ?>
+						<?php esc_html_e( 'Fill Missing Alt Text', 'auto-alt-text-generator' ); ?>
 					</a>
 				<?php endif; ?>
 				<a href="admin.php?page=autoalt-processing&autoalt_action=review" class="button">
-					<?php esc_html_e( 'Review & Improve All', 'auto-alt-text' ); ?>
+					<?php esc_html_e( 'Review & Improve All', 'auto-alt-text-generator' ); ?>
 				</a>
 				<a href="admin.php?page=autoalt-processing&autoalt_action=regenerate" class="button">
-					<?php esc_html_e( 'Regenerate All', 'auto-alt-text' ); ?>
+					<?php esc_html_e( 'Regenerate All', 'auto-alt-text-generator' ); ?>
 				</a>
 			</div>
 
 			<?php if ( $job && $job['is_running'] ) : ?>
 				<div class="notice notice-info" style="margin-top:12px;">
 					<p>
-						<strong><?php esc_html_e( 'Background job active:', 'auto-alt-text' ); ?></strong>
+						<strong><?php esc_html_e( 'Background job active:', 'auto-alt-text-generator' ); ?></strong>
 						<?php
 						printf(
 							/* translators: 1: mode label, 2: processed count, 3: total count, 4: failed count */
-							esc_html__( '%1$s — %2$d / %3$d processed, %4$d failed', 'auto-alt-text' ),
+							esc_html__( '%1$s — %2$d / %3$d processed, %4$d failed', 'auto-alt-text-generator' ),
 							esc_html( $job['mode'] ),
 							(int) $job['processed'],
 							(int) $job['total'],
@@ -241,7 +241,7 @@ class AutoAlt_Admin {
 						);
 						?>
 						<button id="autoalt-cancel-job" class="button" style="margin-left:12px;">
-							<?php esc_html_e( 'Cancel', 'auto-alt-text' ); ?>
+							<?php esc_html_e( 'Cancel', 'auto-alt-text-generator' ); ?>
 						</button>
 					</p>
 					<progress value="<?php echo (int) $job['processed']; ?>" max="<?php echo (int) $job['total']; ?>" style="width:100%;height:20px;"></progress>
@@ -249,11 +249,11 @@ class AutoAlt_Admin {
 			<?php elseif ( $job && $job['completed'] ) : ?>
 				<div class="notice notice-success" style="margin-top:12px;">
 					<p>
-						<strong><?php esc_html_e( 'Previous job completed:', 'auto-alt-text' ); ?></strong>
+						<strong><?php esc_html_e( 'Previous job completed:', 'auto-alt-text-generator' ); ?></strong>
 						<?php
 						printf(
 							/* translators: 1: mode label, 2: processed count, 3: total count, 4: failed count */
-							esc_html__( '%1$s — %2$d / %3$d processed, %4$d failed', 'auto-alt-text' ),
+							esc_html__( '%1$s — %2$d / %3$d processed, %4$d failed', 'auto-alt-text-generator' ),
 							esc_html( $job['mode'] ),
 							(int) $job['processed'],
 							(int) $job['total'],
@@ -265,23 +265,23 @@ class AutoAlt_Admin {
 			<?php endif; ?>
 
 			<div class="autoalt-background-actions" style="margin-top:16px;padding:12px;background:#f0f0f1;border:1px solid #c3c4c7;">
-				<h2 style="margin-top:0;"><?php esc_html_e( 'Process in Background', 'auto-alt-text' ); ?></h2>
-				<p><?php esc_html_e( 'Run processing via WP-Cron — close the browser and come back later. Progress is tracked above.', 'auto-alt-text' ); ?></p>
+				<h2 style="margin-top:0;"><?php esc_html_e( 'Process in Background', 'auto-alt-text-generator' ); ?></h2>
+				<p><?php esc_html_e( 'Run processing via WP-Cron — close the browser and come back later. Progress is tracked above.', 'auto-alt-text-generator' ); ?></p>
 				<p>
 					<?php if ( (int) $stats['missing'] ) : ?>
 						<button class="button button-primary autoalt-bg-btn" data-mode="missing">
-							<?php esc_html_e( 'Fill Missing (Background)', 'auto-alt-text' ); ?>
+							<?php esc_html_e( 'Fill Missing (Background)', 'auto-alt-text-generator' ); ?>
 						</button>
 					<?php endif; ?>
 					<button class="button autoalt-bg-btn" data-mode="review">
-						<?php esc_html_e( 'Review & Improve (Background)', 'auto-alt-text' ); ?>
+						<?php esc_html_e( 'Review & Improve (Background)', 'auto-alt-text-generator' ); ?>
 					</button>
 					<button class="button autoalt-bg-btn" data-mode="regenerate">
-						<?php esc_html_e( 'Regenerate All (Background)', 'auto-alt-text' ); ?>
+						<?php esc_html_e( 'Regenerate All (Background)', 'auto-alt-text-generator' ); ?>
 					</button>
 				</p>
 				<p class="description">
-					<?php esc_html_e( 'Or use WP-CLI for the fastest processing:', 'auto-alt-text' ); ?>
+					<?php esc_html_e( 'Or use WP-CLI for the fastest processing:', 'auto-alt-text-generator' ); ?>
 					<code>wp auto-alt process --mode=missing</code>
 				</p>
 			</div>
@@ -289,10 +289,10 @@ class AutoAlt_Admin {
 			<?php if ( in_array( $action, array( 'missing', 'review', 'regenerate' ), true ) ) : ?>
 				<div class="autoalt-processing-log" style="margin-top:16px;">
 					<h2 id="autoalt-status" style="margin-bottom:8px;display:inline-block;">
-						<?php esc_html_e( 'Processing', 'auto-alt-text' ); ?>&hellip;
+						<?php esc_html_e( 'Processing', 'auto-alt-text-generator' ); ?>&hellip;
 					</h2>
 					<a href="#" id="autoalt-stop-link" class="autoalt-stop-link" style="display:inline-block;margin-left:12px;color:#d63638;vertical-align:middle;">
-						<?php esc_html_e( 'stop', 'auto-alt-text' ); ?>
+						<?php esc_html_e( 'stop', 'auto-alt-text-generator' ); ?>
 					</a>
 					<div id="autoalt-results" style="background:#fff;border:1px solid #c3c4c7;padding:12px;max-height:600px;overflow-y:auto;font-family:monospace;font-size:13px;line-height:1.6;"></div>
 				</div>
@@ -303,7 +303,7 @@ class AutoAlt_Admin {
 		jQuery(function($) {
 			$('.autoalt-bg-btn').on('click', function() {
 				var mode = $(this).data('mode');
-				if ( ! confirm( '<?php echo esc_js( __( 'Start background processing? You can close the browser and check back later.', 'auto-alt-text' ) ); ?>' ) ) {
+				if ( ! confirm( '<?php echo esc_js( __( 'Start background processing? You can close the browser and check back later.', 'auto-alt-text-generator' ) ); ?>' ) ) {
 					return;
 				}
 				$.post(ajaxurl, {
@@ -314,13 +314,13 @@ class AutoAlt_Admin {
 					if ( resp.success ) {
 						location.reload();
 					} else {
-						alert( resp.data.message || '<?php echo esc_js( __( 'Failed to start job.', 'auto-alt-text' ) ); ?>' );
+						alert( resp.data.message || '<?php echo esc_js( __( 'Failed to start job.', 'auto-alt-text-generator' ) ); ?>' );
 					}
 				});
 			});
 
 			$(document).on('click', '#autoalt-cancel-job', function() {
-				if ( ! confirm( '<?php echo esc_js( __( 'Cancel the current background job?', 'auto-alt-text' ) ); ?>' ) ) {
+				if ( ! confirm( '<?php echo esc_js( __( 'Cancel the current background job?', 'auto-alt-text-generator' ) ); ?>' ) ) {
 					return;
 				}
 				$.post(ajaxurl, {
@@ -417,13 +417,13 @@ class AutoAlt_Admin {
 	public function render_settings_page() {
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Auto Alt Text Settings', 'auto-alt-text' ); ?></h1>
+			<h1><?php esc_html_e( 'Auto Alt Text Settings', 'auto-alt-text-generator' ); ?></h1>
 			<form method="post" action="options.php">
 				<?php settings_fields( 'autoalt_settings' ); ?>
 				<table class="form-table">
 					<tr>
 						<th scope="row">
-							<label for="autoalt_batch_size"><?php esc_html_e( 'Batch Size', 'auto-alt-text' ); ?></label>
+							<label for="autoalt_batch_size"><?php esc_html_e( 'Batch Size', 'auto-alt-text-generator' ); ?></label>
 						</th>
 						<td>
 							<select id="autoalt_batch_size" name="autoalt_batch_size">
@@ -440,13 +440,13 @@ class AutoAlt_Admin {
 								?>
 							</select>
 							<p class="description">
-								<?php esc_html_e( 'Number of image IDs fetched per request. Images are still processed one at a time. Higher values reduce admin-ajax calls on large libraries.', 'auto-alt-text' ); ?>
+								<?php esc_html_e( 'Number of image IDs fetched per request. Images are still processed one at a time. Higher values reduce admin-ajax calls on large libraries.', 'auto-alt-text-generator' ); ?>
 							</p>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="autoalt_system_prompt"><?php esc_html_e( 'System Prompt', 'auto-alt-text' ); ?></label>
+							<label for="autoalt_system_prompt"><?php esc_html_e( 'System Prompt', 'auto-alt-text-generator' ); ?></label>
 						</th>
 						<td>
 							<textarea id="autoalt_system_prompt" name="autoalt_system_prompt" rows="12" class="large-text code">
@@ -455,10 +455,10 @@ class AutoAlt_Admin {
 							?>
 							</textarea>
 							<p class="description">
-								<?php esc_html_e( 'Override the default system instruction sent to the AI model. Use few-shot examples to improve output quality from smaller models. Leave empty to use the built-in prompt.', 'auto-alt-text' ); ?>
+								<?php esc_html_e( 'Override the default system instruction sent to the AI model. Use few-shot examples to improve output quality from smaller models. Leave empty to use the built-in prompt.', 'auto-alt-text-generator' ); ?>
 							</p>
 							<details style="margin-top:8px;">
-								<summary><?php esc_html_e( 'Default prompt (click to expand)', 'auto-alt-text' ); ?></summary>
+								<summary><?php esc_html_e( 'Default prompt (click to expand)', 'auto-alt-text-generator' ); ?></summary>
 								<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;">
 								<?php
 									echo esc_textarea( AutoAlt_Processor::init()->default_system_prompt() );
@@ -469,7 +469,7 @@ class AutoAlt_Admin {
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="autoalt_compare_prompt"><?php esc_html_e( 'Comparison Prompt', 'auto-alt-text' ); ?></label>
+							<label for="autoalt_compare_prompt"><?php esc_html_e( 'Comparison Prompt', 'auto-alt-text-generator' ); ?></label>
 						</th>
 						<td>
 							<textarea id="autoalt_compare_prompt" name="autoalt_compare_prompt" rows="8" class="large-text code">
@@ -478,10 +478,10 @@ class AutoAlt_Admin {
 							?>
 							</textarea>
 							<p class="description">
-								<?php esc_html_e( 'System instruction for the text-only comparison step (Review mode). Given old and new alt text, it decides which to keep or combines both. Leave empty to use the built-in default.', 'auto-alt-text' ); ?>
+								<?php esc_html_e( 'System instruction for the text-only comparison step (Review mode). Given old and new alt text, it decides which to keep or combines both. Leave empty to use the built-in default.', 'auto-alt-text-generator' ); ?>
 							</p>
 							<details style="margin-top:8px;">
-								<summary><?php esc_html_e( 'Default comparison prompt (click to expand)', 'auto-alt-text' ); ?></summary>
+								<summary><?php esc_html_e( 'Default comparison prompt (click to expand)', 'auto-alt-text-generator' ); ?></summary>
 								<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;">
 								<?php
 									echo esc_textarea( AutoAlt_Processor::init()->default_compare_prompt() );
@@ -492,29 +492,29 @@ class AutoAlt_Admin {
 					</tr>
 					<tr>
 						<th scope="row">
-							<?php esc_html_e( 'Auto-Generate on Upload', 'auto-alt-text' ); ?>
+							<?php esc_html_e( 'Auto-Generate on Upload', 'auto-alt-text-generator' ); ?>
 						</th>
 						<td>
 							<label for="autoalt_auto_generate">
 								<input type="checkbox" id="autoalt_auto_generate" name="autoalt_auto_generate" value="1" <?php checked( get_option( 'autoalt_auto_generate', false ) ); ?>>
-								<?php esc_html_e( 'Generate alt text automatically when new images are uploaded', 'auto-alt-text' ); ?>
+								<?php esc_html_e( 'Generate alt text automatically when new images are uploaded', 'auto-alt-text-generator' ); ?>
 							</label>
 							<p class="description">
-								<?php esc_html_e( 'Processes each new image with the AI model during upload. May add a delay depending on your AI provider.', 'auto-alt-text' ); ?>
+								<?php esc_html_e( 'Processes each new image with the AI model during upload. May add a delay depending on your AI provider.', 'auto-alt-text-generator' ); ?>
 							</p>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row">
-							<?php esc_html_e( 'Show Alt Text After Upload', 'auto-alt-text' ); ?>
+							<?php esc_html_e( 'Show Alt Text After Upload', 'auto-alt-text-generator' ); ?>
 						</th>
 						<td>
 							<label for="autoalt_show_generated">
 								<input type="checkbox" id="autoalt_show_generated" name="autoalt_show_generated" value="1" <?php checked( get_option( 'autoalt_show_generated', false ) ); ?>>
-								<?php esc_html_e( 'Show generated alt text as a notice on the Media Library page after upload', 'auto-alt-text' ); ?>
+								<?php esc_html_e( 'Show generated alt text as a notice on the Media Library page after upload', 'auto-alt-text-generator' ); ?>
 							</label>
 							<p class="description">
-								<?php esc_html_e( 'When enabled, a notice appears on the Media Library page showing alt text generated for newly uploaded images.', 'auto-alt-text' ); ?>
+								<?php esc_html_e( 'When enabled, a notice appears on the Media Library page showing alt text generated for newly uploaded images.', 'auto-alt-text-generator' ); ?>
 							</p>
 						</td>
 					</tr>
@@ -607,7 +607,7 @@ class AutoAlt_Admin {
 					<?php echo $thumbnail; //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				<?php endif; ?>
 				<span>
-					<strong><?php esc_html_e( 'Auto Alt Text Generated:', 'auto-alt-text' ); ?></strong>
+					<strong><?php esc_html_e( 'Auto Alt Text Generated:', 'auto-alt-text-generator' ); ?></strong>
 					<?php echo esc_html( $data['alt_text'] ); ?>
 				</span>
 			</p>
@@ -658,7 +658,7 @@ class AutoAlt_Admin {
 		check_ajax_referer( 'autoalt_process', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-alt-text' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-alt-text-generator' ) ) );
 		}
 
 		$mode   = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : 'missing';
@@ -680,14 +680,14 @@ class AutoAlt_Admin {
 		check_ajax_referer( 'autoalt_process', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-alt-text' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-alt-text-generator' ) ) );
 		}
 
 		$id   = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
 		$mode = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : 'review';
 
 		if ( ! $id ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid image ID.', 'auto-alt-text' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid image ID.', 'auto-alt-text-generator' ) ) );
 		}
 
 		$processor = AutoAlt_Processor::init();
@@ -705,24 +705,24 @@ class AutoAlt_Admin {
 		check_ajax_referer( 'autoalt_create_job' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-alt-text' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-alt-text-generator' ) ) );
 		}
 
 		$mode = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : 'missing';
 		if ( ! in_array( $mode, array( 'missing', 'review', 'regenerate' ), true ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid mode.', 'auto-alt-text' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid mode.', 'auto-alt-text-generator' ) ) );
 		}
 
 		$existing = get_option( 'autoalt_job_status', false );
 		if ( $existing && ! empty( $existing['is_running'] ) ) {
-			wp_send_json_error( array( 'message' => __( 'A job is already running.', 'auto-alt-text' ) ) );
+			wp_send_json_error( array( 'message' => __( 'A job is already running.', 'auto-alt-text-generator' ) ) );
 		}
 
 		$processor = AutoAlt_Processor::init();
 		$count     = $processor->get_image_ids( $mode, 0, 1 );
 
 		if ( empty( $count['total'] ) ) {
-			wp_send_json_error( array( 'message' => __( 'No images to process.', 'auto-alt-text' ) ) );
+			wp_send_json_error( array( 'message' => __( 'No images to process.', 'auto-alt-text-generator' ) ) );
 		}
 
 		$job = array(
@@ -741,7 +741,7 @@ class AutoAlt_Admin {
 		// Schedule first batch in 10 seconds to allow the response to return.
 		wp_schedule_single_event( time() + 10, 'autoalt_process_batch' );
 
-		wp_send_json_success( array( 'message' => __( 'Job created.', 'auto-alt-text' ) ) );
+		wp_send_json_success( array( 'message' => __( 'Job created.', 'auto-alt-text-generator' ) ) );
 	}
 
 	/**
@@ -754,7 +754,7 @@ class AutoAlt_Admin {
 
 		$job = get_option( 'autoalt_job_status', false );
 		if ( ! $job ) {
-			wp_send_json_error( array( 'message' => __( 'No job found.', 'auto-alt-text' ) ) );
+			wp_send_json_error( array( 'message' => __( 'No job found.', 'auto-alt-text-generator' ) ) );
 		}
 
 		wp_send_json_success( $job );
@@ -769,7 +769,7 @@ class AutoAlt_Admin {
 		check_ajax_referer( 'autoalt_cancel_job' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-alt-text' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'auto-alt-text-generator' ) ) );
 		}
 
 		$job = get_option( 'autoalt_job_status', false );
@@ -780,7 +780,7 @@ class AutoAlt_Admin {
 			update_option( 'autoalt_job_status', $job, false );
 		}
 
-		wp_send_json_success( array( 'message' => __( 'Job cancelled.', 'auto-alt-text' ) ) );
+		wp_send_json_success( array( 'message' => __( 'Job cancelled.', 'auto-alt-text-generator' ) ) );
 	}
 
 	/**

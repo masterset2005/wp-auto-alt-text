@@ -94,7 +94,7 @@ class AutoAlt_CLI extends WP_CLI_Command {
 		WP_CLI::line( '' );
 
 		/* translators: 1: batch size */
-		WP_CLI::log( sprintf( __( 'Processing in batches of %d...', 'auto-alt-text' ), $batch ) );
+		WP_CLI::log( sprintf( __( 'Processing in batches of %d...', 'auto-alt-text-generator' ), $batch ) );
 		WP_CLI::line( '' );
 
 		$progress = WP_CLI\Utils\make_progress_bar(
@@ -140,7 +140,7 @@ class AutoAlt_CLI extends WP_CLI_Command {
 		WP_CLI::success(
 			sprintf(
 				/* translators: 1: processed count, 2: failed count, 3: elapsed seconds */
-				__( 'Done — %1$d processed, %2$d failed in %3$ds', 'auto-alt-text' ),
+				__( 'Done — %1$d processed, %2$d failed in %3$ds', 'auto-alt-text-generator' ),
 				$processed,
 				$failed,
 				$elapsed
