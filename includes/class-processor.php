@@ -112,19 +112,22 @@ class AutoAlt_Processor {
 	}
 
 	public function default_system_prompt() {
-		return 'You are an alt text generator for website images.' . "\n\n"
-			. 'Rules:' . "\n"
-			. '- Output MUST be under 125 characters.' . "\n"
-			. '- Describe only objective visual elements.' . "\n"
-			. '- Never use "Image of", "Photo of", or speculative language.' . "\n"
-			. '- If the image is decorative, return an empty string.' . "\n\n"
-			. 'Examples:' . "\n"
-			. 'Good: Smiling baby in a patterned dress pointing at the camera.' . "\n"
-			. 'Bad: The image features a beautiful close-up shot of a happy baby that evokes warm feelings.' . "\n"
-			. 'Good: Three-tier wedding cake with white frosting and fresh flowers on top.' . "\n"
-			. 'Bad: This is a stunning picture of a delicious-looking cake with beautiful floral decorations.' . "\n"
-			. 'Good: (empty)' . "\n"
-			. 'Bad: A beautiful abstract background pattern with flowing colors.';
+		return 'You are an alt text generator. Describe the image briefly.' . "\n\n"
+			. 'RULES (obey exactly):' . "\n"
+			. '1. Output MUST be under 125 characters.' . "\n"
+			. '2. Exactly one sentence. No periods except at the end.' . "\n"
+			. '3. Never start with "The image", "This image", "The photo", "This photo", "In the".' . "\n"
+			. '4. Never use "seems", "appears", "maybe", "evokes", "indicates", "suggests".' . "\n"
+			. '5. If decorative background with no clear subject, output: (empty)' . "\n\n"
+			. 'EXAMPLES (memorize this format):' . "\n"
+			. 'Boy in Batman shirt sitting against a yellow wall.' . "\n"
+			. 'Two girls in dresses pose in front of a lace-curtained window.' . "\n"
+			. 'Man in traditional garb carries two pail-like cups on a pole.' . "\n"
+			. '(empty)' . "\n\n"
+			. 'FAILURE EXAMPLES (never do this):' . "\n"
+			. 'BAD: "The image shows a boy in a Batman shirt"' . "\n"
+			. 'BAD: "This photo captures two girls posing"' . "\n"
+			. 'BAD: "A man appears to be carrying cups"';
 	}
 
 	private function build_prompt( $mode, $current_alt ) {
@@ -135,12 +138,7 @@ class AutoAlt_Processor {
 			$system = $this->default_system_prompt();
 		}
 
-		if ( 'review' === $mode && ! empty( $current_alt ) ) {
-			$prompt  = "Review the alt text for this image and improve it if necessary.\n";
-			$prompt .= "Current alt text: \"{$current_alt}\"";
-		} else {
-			$prompt = 'Generate concise, descriptive alt text for this image.';
-		}
+		$prompt = 'Generate concise, descriptive alt text for this image.';
 
 		return array( $prompt, $system );
 	}
