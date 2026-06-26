@@ -637,7 +637,7 @@ class AutoAlt_Admin {
 			return;
 		}
 
-		$result = AutoAlt_Processor::init()->process_single( $attachment_id, 'missing' );
+		$result = AutoAlt_Processor::init()->process_single( $attachment_id );
 
 		if ( get_option( 'autoalt_show_generated', false ) && 'success' === $result['status'] ) {
 			update_user_meta(
@@ -686,14 +686,13 @@ class AutoAlt_Admin {
 		}
 
 		$id   = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
-		$mode = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : 'review';
 
 		if ( ! $id ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid image ID.', 'auto-alt-text-generator' ) ) );
 		}
 
 		$processor = AutoAlt_Processor::init();
-		$result    = $processor->process_single( $id, $mode );
+		$result    = $processor->process_single( $id );
 
 		wp_send_json_success( $result );
 	}
@@ -841,7 +840,7 @@ class AutoAlt_Admin {
 		}
 
 		foreach ( $ids_result['ids'] as $id ) {
-			$result = $processor->process_single( $id, $job['mode'] );
+			$result = $processor->process_single( $id );
 			++$job['processed'];
 
 			if ( 'error' === $result['status'] ) {

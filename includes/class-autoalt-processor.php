@@ -131,14 +131,13 @@ class AutoAlt_Processor {
 	 * Process a single attachment: generate alt text via AI.
 	 *
 	 * @param int    $attachment_id Attachment post ID.
-	 * @param string $mode          Processing mode: missing|review|regenerate.
 	 * @return array{id: int, title: string, status: string, previous?: string, generated?: string, changed?: bool, error?: string, reason?: string}
 	 */
-	public function process_single( $attachment_id, $mode = 'review' ) {
-		$current_alt = (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
-		$file        = get_attached_file( $attachment_id );
-		$mime        = get_post_mime_type( $attachment_id );
-		$title       = get_the_title( $attachment_id );
+	public function process_single( $attachment_id ) {
+		$context = $this->get_attachment_context( $attachment_id );
+		$file    = get_attached_file( $attachment_id );
+		$mime    = get_post_mime_type( $attachment_id );
+		$title   = get_the_title( $attachment_id );
 
 		if ( ! $file || ! file_exists( $file ) ) {
 			return $this->result( $attachment_id, $title, 'error', null, __( 'File not found on server.', 'auto-alt-text-generator' ) );
@@ -160,74 +159,41 @@ class AutoAlt_Processor {
 			return $this->result( $attachment_id, $title, 'error', null, __( 'AI Client not available.', 'auto-alt-text-generator' ) );
 		}
 
-		if ( 'missing' === $mode && ! empty( $current_alt ) ) {
-			return array(
-				'id'        => $attachment_id,
-				'title'     => $title,
-				'status'    => 'skipped',
-				'reason'    => __( 'Already has alt text.', 'auto-alt-text-generator' ),
-				'previous'  => $current_alt,
-				'generated' => $current_alt,
-				'changed'   => false,
-				'thumbnail' => $this->thumbnail_url( $attachment_id ),
-			);
-		}
-
+		// Phase 1: Vision LLM (Observation)
 		list( $prompt, $system ) = $this->build_prompt();
-
 		$alt_text = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system )
 			->with_file( $file, $mime )
 			->generate_text();
 
 		if ( is_wp_error( $alt_text ) ) {
-			$msg = $alt_text->get_error_message();
-			return $this->result( $attachment_id, $title, 'error', null, sprintf(
-				/* translators: %s: error message from AI provider */
-				__( 'AI generation failed: %s', 'auto-alt-text-generator' ),
-				$msg
-			) );
+			return $this->result( $attachment_id, $title, 'error', null, sprintf( __( 'AI generation failed: %s', 'auto-alt-text-generator' ), $alt_text->get_error_message() ) );
 		}
 
-		if ( preg_match( '/\[\[DECORATIVE(?:_ALT)?\]\]/i', $alt_text ) ) {
-			$alt_text = '';
-		}
-
-		if ( 'review' === $mode && ! empty( $current_alt ) && '' !== $alt_text ) {
-			$alt_text = $this->compare_alt_texts( $current_alt, $alt_text );
-		}
+		// Phase 2: Synthesizer (Context + Logic)
+		$alt_text = $this->compare_alt_texts( $context, $alt_text );
 
 		if ( preg_match( '/\[\[DECORATIVE(?:_ALT)?\]\]/i', $alt_text ) ) {
 			$alt_text = '';
 		}
 
 		$alt_text = sanitize_text_field( $alt_text );
-
-		// Strip surrounding double, single, and smart quotes (common model mistake).
 		$alt_text = preg_replace( '/^["\'\x{2018}\x{2019}\x{201C}\x{201D}]+|["\'\x{2018}\x{2019}\x{201C}\x{201D}]+$/u', '', $alt_text );
-
-		// Strip leading framing like "An image shows", "The image features", etc.
-		$alt_text = preg_replace(
-			'/^(?:An?|The)\s+(?:image|photo|picture|shot|scene|view)(?:\s+(?:shows?|features?|depicts?|showcases?|displays?|presents?|captures?|of|with|in))?\s+/i',
-			'',
-			$alt_text
-		);
-
-		// Strip category labels that models sometimes include despite instructions.
+		$alt_text = preg_replace( '/^(?:An?|The)\s+(?:image|photo|picture|shot|scene|view)(?:\s+(?:shows?|features?|depicts?|showcases?|displays?|presents?|captures?|of|with|in))?\s+/i', '', $alt_text );
 		$alt_text = preg_replace( '/^(?:Informative|Decorative|Functional):\s+/i', '', $alt_text );
 
 		if ( strlen( $alt_text ) > 125 ) {
 			$alt_text = substr( $alt_text, 0, 125 );
 		}
-		$changed = $alt_text !== $current_alt;
-
+		
+		$changed = $alt_text !== $context['existing_alt'];
 		update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt_text );
 
 		return array(
 			'id'        => $attachment_id,
 			'title'     => $title,
 			'status'    => 'success',
-			'previous'  => ! empty( $current_alt ) ? $current_alt : '',
+			'previous'  => $context['existing_alt'],
 			'generated' => $alt_text,
 			'changed'   => $changed,
 			'thumbnail' => $this->thumbnail_url( $attachment_id ),
@@ -283,31 +249,53 @@ class AutoAlt_Processor {
 	}
 
 	/**
+	 * Gather context for an attachment: caption, post title, excerpt.
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return array{caption: string, title: string, article_title: string, article_excerpt: string, existing_alt: string}
+	 */
+	private function get_attachment_context( $attachment_id ) {
+		$post = get_post( $attachment_id );
+		$parent_id = $post ? (int) $post->post_parent : 0;
+		$context = array(
+			'caption'         => $post ? (string) $post->post_excerpt : '',
+			'title'           => $post ? (string) $post->post_title : '',
+			'article_title'   => '',
+			'article_excerpt' => '',
+			'existing_alt'    => (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ),
+		);
+
+		if ( $parent_id ) {
+			$parent = get_post( $parent_id );
+			if ( $parent ) {
+				$context['article_title']   = $parent->post_title;
+				$context['article_excerpt'] = mb_substr( wp_strip_all_tags( $parent->post_content ), 0, 500 );
+			}
+		}
+		return $context;
+	}
+
+	/**
 	 * Build prompt and system instruction for the vision model.
 	 *
 	 * @return array{0: string, 1: string}
 	 */
 	private function build_prompt() {
-		$custom = get_option( 'autoalt_system_prompt', '' );
-		if ( ! empty( trim( $custom ) ) ) {
-			$system = $custom;
-		} else {
-			$system = $this->default_system_prompt();
-		}
-
-		$prompt = 'Generate concise, descriptive alt text for this image.';
+		// Vision model focuses purely on describing visual content, not accessibility.
+		$system = 'You are a visual description expert. Your goal is to describe the subjects, actions, setting, and details in the image accurately and concisely. Do not worry about accessibility labels or strict length constraints, just be descriptive and factual.';
+		$prompt = 'Describe this image.';
 
 		return array( $prompt, $system );
 	}
 
 	/**
-	 * Compare old and new alt text using a text-only AI call (Review mode).
+	 * Compare old and new alt text using a text-only AI call (Synthesizer).
 	 *
-	 * @param string $old     Existing alt text.
+	 * @param array $context  Attachment context (caption, existing_alt, etc).
 	 * @param string $new_alt Newly generated alt text.
 	 * @return string
 	 */
-	private function compare_alt_texts( $old, $new_alt ) {
+	private function compare_alt_texts( $context, $new_alt ) {
 		$custom = get_option( 'autoalt_compare_prompt', '' );
 		if ( ! empty( trim( $custom ) ) ) {
 			$system = $custom;
@@ -315,7 +303,8 @@ class AutoAlt_Processor {
 			$system = $this->default_compare_prompt();
 		}
 
-		$prompt = "OLD: \"{$old}\"\nNEW: \"{$new_alt}\"";
+		$prompt = "CONTEXT:\n" . print_r( $context, true ) . "\n\n" .
+		          "NEW (freshly generated from the image): \"{$new_alt}\"";
 
 		$result = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system )

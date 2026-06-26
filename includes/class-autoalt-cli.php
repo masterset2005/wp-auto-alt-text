@@ -110,7 +110,7 @@ class AutoAlt_CLI extends WP_CLI_Command {
 			}
 
 			foreach ( $result['ids'] as $id ) {
-				$single = $processor->process_single( $id, $mode );
+				$single = $processor->process_single( $id );
 
 				if ( 'error' === $single['status'] ) {
 					++$failed;
