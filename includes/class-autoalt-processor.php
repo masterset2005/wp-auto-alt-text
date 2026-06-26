@@ -319,24 +319,13 @@ class AutoAlt_Processor {
 		return trim( $result );
 	}
 
-	/**
-	 * Build a result array for process_single().
-	 *
-	 * @param int         $id        Attachment ID.
-	 * @param string      $title     Attachment title.
-	 * @param string      $status    success|error|skipped.
-	 * @param string|null $generated Generated alt text.
-	 * @param string|null $error     Error message.
-	 * @param string|null $reason    Skip reason.
-	 * @return array
-	 */
-	/**
-	 * Get the admin thumbnail URL for an attachment.
-	 *
-	 * @param int $id Attachment ID.
-	 * @return string
-	 */
-	private function thumbnail_url( $id ) {
+/**
+ * Get the admin thumbnail URL for an attachment.
+ *
+ * @param int $id Attachment ID.
+ * @return string
+ */
+private function thumbnail_url( $id ) {
 		$url = wp_get_attachment_image_url( $id, array( 40, 40 ) );
 		return $url ? $url : '';
 	}

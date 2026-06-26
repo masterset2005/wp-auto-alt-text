@@ -118,17 +118,11 @@ class AutoAlt_Admin {
 	 * @return void
 	 */
 	public function enqueue_processing_script( $hook ) {
-		if ( 'upload.php' === $hook ) {
-			$action = isset( $_GET['autoalt_action'] ) ? sanitize_key( $_GET['autoalt_action'] ) : ''; //phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			if ( ! in_array( $action, array( 'missing', 'review', 'regenerate' ), true ) ) {
-				return;
-			}
-		} elseif ( 'media_page_autoalt-processing' !== $hook ) {
+		if ( 'upload.php' !== $hook && 'media_page_autoalt-processing' !== $hook ) {
 			return;
 		}
 
 		$action = isset( $_GET['autoalt_action'] ) ? sanitize_key( $_GET['autoalt_action'] ) : ''; //phpcs:ignore WordPress.Security.NonceVerification.Recommended
-
 		if ( ! in_array( $action, array( 'missing', 'review', 'regenerate' ), true ) ) {
 			return;
 		}
@@ -801,7 +795,7 @@ class AutoAlt_Admin {
 		}
 
 		$processor  = AutoAlt_Processor::init();
-		$batch_size = absint( get_option( 'autoalt_batch_size', 10 ) );
+		$batch_size = absint( get_option( 'autoalt_batch_size', 5 ) );
 		$ids_result = $processor->get_image_ids( $job['mode'], $job['offset'], $batch_size );
 
 		if ( empty( $ids_result['ids'] ) ) {
