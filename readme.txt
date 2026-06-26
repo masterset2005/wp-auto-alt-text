@@ -4,25 +4,24 @@ Tags: alt text, accessibility, images, media library, AI
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Automatically generate and improve alt text for every image in your media library using the WordPress 7.0 built-in AI Client.
+Fill missing, review and improve, or regenerate alt text for your entire media library using the WordPress 7.0 AI Client — directly from the Media Library bulk actions.
 
 == Description ==
 
-Auto Alt Text Generator harnesses the WordPress 7.0 AI Client to scan your entire media library and generate descriptive, accessible alt text for every image. No more manually editing each image — let AI handle the busywork while keeping you in control.
+Auto Alt Text Generator adds **Fill Missing Alt Text**, **Review & Improve Alt Text**, and **Regenerate Alt Text** bulk actions to the Media Library list view. Select any image, choose an action, and it automatically processes every matching image in your library. No separate admin page needed — it integrates right into your existing workflow.
 
 = Features =
 
-* **Bulk AI generation** — Process thousands of images in one session. Batches run sequentially until all images are processed (no total limit).
-* **Review & Improve mode** — AI evaluates your existing alt text against the image and keeps it if good, replaces it if generic or inaccurate.
-* **Four processing modes** — Missing only, missing/empty, review existing, or regenerate all.
-* **Pause / Resume / Cancel** — Full control over long-running jobs. Pause at any time and pick up where you left off.
-* **Per-image logging** — See exactly what was generated for each image, including whether it was changed or kept, plus errors and skips.
+* **Fill Missing Alt Text** — Scans your entire library for images without alt text and generates descriptive alt text for each one. Images that already have alt text are skipped.
+* **Review & Improve Alt Text** — AI evaluates each image's existing alt text against the image itself. If the alt is accurate and descriptive, it's kept as-is. If it's generic, missing, or inaccurate, a better version is generated.
+* **Regenerate Alt Text** — Force-generate new alt text for every image, replacing whatever is there.
+* **Compare display** — Each result shows the previous alt text, the new alt text, and the decision (KEPT, REPLACED, ADDED) in a compact inline log.
 * **Smart system prompt** — The AI is instructed to produce concise alt text (<125 characters), avoid "Image of" prefixes, and return empty for decorative images.
-* **Adjustable batch size** — Control how many images are processed per AJAX request (1–20) to match your server's limits.
+* **Sequential processing** — Images are processed one by one with a visible progress notice and per-image results.
 * **Uses WP 7.0 AI Client** — No third-party API keys required beyond what you configure in Settings > Connectors. Works with Anthropic, Google, and OpenAI provider plugins.
 
 = Requirements =
@@ -36,8 +35,8 @@ Auto Alt Text Generator harnesses the WordPress 7.0 AI Client to scan your entir
 1. Upload the `wp-auto-alt-text` folder to `/wp-content/plugins/`, or install via Plugins > Add New.
 2. Activate the plugin through the Plugins screen.
 3. Go to **Settings > Connectors** and connect at least one AI provider (Anthropic, Google, or OpenAI).
-4. Go to **Media > Auto Alt Text**.
-5. Select your processing mode and batch size, then click **Start Processing**.
+4. Go to **Media > Library** and switch to **List View**.
+5. Check any single image, choose an action from the Bulk Actions dropdown (**Fill Missing Alt Text**, **Review & Improve Alt Text**, or **Regenerate Alt Text**), and click **Apply**. The plugin automatically processes all matching images — you don't need to select every image.
 
 == Frequently Asked Questions ==
 
@@ -51,15 +50,19 @@ Any provider plugin compatible with the WordPress 7.0 AI Client. Officially supp
 
 = Will this overwrite my existing alt text? =
 
-Only if you select "All images" mode. "Missing only" and "Missing or empty" modes leave existing alt text untouched. "Review & Improve" mode passes your existing alt to the AI for evaluation — it keeps it if accurate and descriptive, replaces it if generic or inaccurate.
+The **Regenerate** action replaces existing alt text. The **Review & Improve** action passes your existing alt to the AI for evaluation — it keeps it if accurate and descriptive, replaces it if generic or inaccurate. **Fill Missing Alt Text** only processes images without alt text and never overwrites existing ones.
 
-= Can I cancel mid-processing? =
+= Where is the old admin page with the Start button? =
 
-Yes. The Pause, Resume, and Cancel buttons give you full control. Cancelled jobs do not roll back already-processed images.
+Version 1.0.1 removed the separate admin page in favor of native Media Library bulk actions. Processing now runs from the Media Library list view, matching the existing WordPress workflow.
+
+= How many images can I process at once? =
+
+There is no limit. The plugin processes every matching image in your library. Images are fetched in batches of 5 and processed one at a time with a 300ms delay between calls to avoid overwhelming your AI provider.
 
 = What if an image fails? =
 
-Failed images are logged with an error message and processing continues with the next image. You can review all errors in the processing log.
+Failed images are logged with an error message in the processing notice and processing continues with the next image.
 
 = Will the AI generate good alt text? =
 
@@ -81,21 +84,26 @@ Supported providers include Anthropic (Claude), Google (Gemini), and OpenAI (GPT
 
 == Screenshots ==
 
-1. The Auto Alt Text admin page with mode selection and controls.
-2. Real-time processing log showing per-image results.
+1. Bulk actions in the Media Library list view showing "Fill Missing Alt Text", "Review & Improve Alt Text", and "Regenerate Alt Text".
+2. Processing notice with per-image results showing KEPT, REPLACED, and ADDED decisions.
 3. Settings > Connectors screen where AI providers are configured.
 
 == Changelog ==
 
+= 1.0.1 =
+* Removed standalone admin page and AJAX batch processing system.
+* Added "Fill Missing Alt Text" bulk action — processes all images without alt text.
+* Added "Review & Improve Alt Text" bulk action — AI evaluates and improves existing alt text.
+* Added "Regenerate Alt Text" bulk action — force-generates new alt for every image.
+* Bulk actions process all matching images (ignore selection) — just check any one image.
+* Compare display in processing notice shows previous alt, new alt, and decision (KEPT/REPLACED/ADDED).
+* Images processed sequentially with live progress notice and per-result log.
+* Removed hardcoded model preference — now uses the user's configured AI provider.
+
 = 1.0.0 =
 * Initial release.
-* Bulk AI alt text generation for media library images.
-* Four processing modes: missing, poor, review, and all.
-* Review mode: AI evaluates existing alt text and keeps or improves it.
-* Batch processing with pause/resume/cancel.
-* Per-image progress logging with changed/kept indicators.
 
 == Upgrade Notice ==
 
-= 1.0.0 =
-Initial release.
+= 1.0.1 =
+Version 1.0.1 replaces the standalone admin page with three Media Library bulk actions. The old admin page at Media > Auto Alt Text has been removed.

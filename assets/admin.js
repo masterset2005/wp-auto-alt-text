@@ -1,190 +1,170 @@
 (function ($) {
-	var state = {
-		running: false,
-		paused: false,
-		cancelled: false,
-		mode: 'missing',
-		batch: 5,
-		offset: 0,
-		total: 0,
-		success: 0,
-		errors: 0,
-		skipped: 0,
-	};
+	var data = autoaltBulkData;
+	if (!data || !data.mode) return;
 
-	function logEntry(type, message) {
-		var $log = $('#autoalt-log');
-		var $content = $log.find('.autoalt-log-content');
-		$log.show();
-		$content.append(
-			$('<div>').addClass('aat-log-entry ' + type).text(message)
-		);
-		$log.scrollTop($log[0].scrollHeight);
+	var mode = data.mode;
+	var batchSize = data.batchSize || 5;
+	var total = 0;
+	var done = 0;
+	var offset = 0;
+	var results = [];
+	var running = true;
+
+	function getActionLabel() {
+		if (mode === 'missing') return 'Fill Missing';
+		if (mode === 'review') return 'Review & Improve';
+		return 'Regenerate';
 	}
 
-	function updateProgress() {
-		var $progress = $('#autoalt-progress');
-		var $bar = $progress.find('.autoalt-progress-bar');
-		var $text = $progress.find('.autoalt-progress-text');
-		$progress.show();
+	var $notice = $(
+		'<div class="notice notice-info is-dismissible">' +
+			'<p><strong>Auto Alt Text:</strong> ' + getActionLabel() + ' — starting...</p>' +
+			'<div class="autoalt-results" style="margin:8px 0 4px;max-height:320px;overflow-y:auto;font-family:monospace;font-size:12px;line-height:1.5;"></div>' +
+		'</div>'
+	).insertAfter('.wp-header-end');
 
-		var doneCount = state.success + state.errors + state.skipped;
-		var pct = state.total > 0 ? Math.min((doneCount / state.total) * 100, 100) : 0;
-		$bar.css('width', pct + '%');
+	var $results = $notice.find('.autoalt-results');
 
-		$text.text(
-			'Processed ' + doneCount + ' / ' + state.total +
-			' (' + state.success + ' ok, ' + state.errors + ' errors, ' + state.skipped + ' skipped)'
-		);
+	function addEntry(r) {
+		var $entry = $('<div style="padding:3px 6px;margin:1px 0;border-radius:2px;">');
+		var text;
 
-		if (state.cancelled) {
-			$text.text($text.text() + ' — Cancelled');
-		} else if (doneCount >= state.total && state.total > 0) {
-			$text.text($text.text() + ' — Complete!');
+		if (r.status === 'success') {
+			var cur = r.previous ? r.previous.substring(0, 200) : '';
+			var gen = (r.generated || '(decorative)').substring(0, 200);
+
+			if (r.changed && cur) {
+				text = '#' + r.id + ' ' + (r.title || '') + ' → REPLACED\n  was: "' + cur + '"\n  now: "' + gen + '"';
+				$entry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
+			} else if (r.changed) {
+				text = '#' + r.id + ' ' + (r.title || '') + ' + ADDED\n  alt: "' + gen + '"';
+				$entry.css('background', '#edfaef').css('border-left', '3px solid #00a32a');
+			} else {
+				text = '#' + r.id + ' ' + (r.title || '') + ' ✓ KEPT\n  alt: "' + gen + '"';
+				$entry.css('background', '#fef8ee').css('border-left', '3px solid #dba617');
+			}
+		} else if (r.status === 'error') {
+			text = '#' + r.id + ' ' + (r.title || '') + ' ✗ ' + (r.error || 'Error');
+			$entry.css('background', '#fcf0f1').css('border-left', '3px solid #d63638');
+		} else {
+			text = '#' + r.id + ' ' + (r.title || '') + ' — ' + (r.reason || 'Skipped');
+			$entry.css('background', '#f6f7f7').css('border-left', '3px solid #c3c4c7');
 		}
+
+		$entry.css('white-space', 'pre-wrap').css('word-break', 'break-word');
+		$entry.text(text);
+		$results.append($entry);
+		$results.scrollTop($results[0].scrollHeight);
 	}
 
-	function sendBatch() {
-		if (!state.running || state.paused || state.cancelled) {
-			return;
-		}
+	function updateSummary() {
+		var ok = 0, errs = 0;
+		results.forEach(function (r) {
+			if (r.status === 'success') ok++;
+			else if (r.status === 'error') errs++;
+		});
+		var summary = 'Complete. ' + ok + ' ok';
+		if (errs > 0) summary += ', ' + errs + ' errors';
+		$notice.find('p').html('<strong>Auto Alt Text:</strong> ' + summary);
+		$notice.removeClass('notice-info').addClass(errs > 0 ? 'notice-warning' : 'notice-success');
+	}
+
+	function processId(id, cb) {
+		$notice.find('p').html('<strong>Auto Alt Text:</strong> ' + getActionLabel() + ' — ' + (done + 1) + ' / ' + total + '...');
 
 		$.ajax({
-			url: autoaltData.ajaxUrl,
+			url: data.ajaxUrl,
 			method: 'POST',
 			data: {
-				action: 'autoalt_process_batch',
-				nonce: autoaltData.nonce,
-				mode: state.mode,
-				batch: state.batch,
-				offset: state.offset,
+				action: 'autoalt_process_single',
+				nonce: data.nonce,
+				id: id,
+				mode: mode,
 			},
 			success: function (response) {
-				if (!state.running || state.cancelled) {
-					return;
-				}
-
-				if (!response.success) {
-					logEntry('error', 'Server error: ' + (response.data && response.data.message ? response.data.message : 'unknown'));
-					state.running = false;
-					setButtonsIdle();
-					return;
-				}
-
-				var data = response.data;
-
-				state.total = data.total > 0 ? data.total : state.total;
-				state.offset = data.offset;
-
-				if (data.batch && data.batch.results) {
-					$.each(data.batch.results, function (i, r) {
-						var title = r.title || '#' + r.id;
-						if (r.status === 'success') {
-							state.success++;
-							var label = r.changed ? '→' : '✓ (kept)';
-							var preview = (r.generated || '(decorative)').substring(0, 80);
-							var msg = '#' + r.id + ' ' + title + ' ' + label + ' "' + preview + '"';
-							if (r.changed && r.previous) {
-								msg += ' (was: "' + r.previous.substring(0, 60) + '")';
-							}
-							logEntry('success', msg);
-						} else if (r.status === 'error') {
-							state.errors++;
-							logEntry('error', '#' + r.id + ' ' + title + ' ✗ ' + (r.error || 'Unknown error'));
-						} else if (r.status === 'skipped') {
-							state.skipped++;
-							logEntry('skipped', '#' + r.id + ' ' + title + ' — ' + (r.reason || 'Skipped'));
-						}
-					});
-				}
-
-				updateProgress();
-
-				if (data.done || (state.total > 0 && state.offset >= state.total)) {
-					state.running = false;
-					setButtonsIdle();
-					logEntry('info', 'Processing complete.');
-					return;
-				}
-
-				if (!state.paused && !state.cancelled) {
-					setTimeout(sendBatch, 500);
-				}
+				var r = response.data;
+				results.push(r);
+				addEntry(r);
 			},
-			error: function (jqXHR) {
-				if (!state.running) return;
-				logEntry('error', 'Request failed: ' + jqXHR.statusText + ' (' + jqXHR.status + ')');
-				state.running = false;
-				setButtonsIdle();
+			error: function () {
+				results.push({ id: id, status: 'error' });
+				addEntry({ id: id, title: '', status: 'error', error: 'Request failed' });
+			},
+			complete: function () {
+				done++;
+				cb();
 			},
 		});
 	}
 
-	function setButtonsRunning() {
-		$('#autoalt-start').hide();
-		$('#autoalt-pause').show().prop('disabled', false);
-		$('#autoalt-resume').hide();
-		$('#autoalt-cancel').show().prop('disabled', false);
-	}
-
-	function setButtonsPaused() {
-		$('#autoalt-start').hide();
-		$('#autoalt-pause').hide();
-		$('#autoalt-resume').show().prop('disabled', false);
-		$('#autoalt-cancel').show().prop('disabled', false);
-	}
-
-	function setButtonsIdle() {
-		$('#autoalt-start').show().prop('disabled', false);
-		$('#autoalt-pause').hide();
-		$('#autoalt-resume').hide();
-		$('#autoalt-cancel').hide();
-	}
-
-	$('#autoalt-start').on('click', function () {
-		if (!autoaltData.aiAvailable) {
-			alert('AI Client is not available. Configure an AI provider under Settings > Connectors.');
+	function processBatch(ids, cb) {
+		if (!running || ids.length === 0) {
+			cb();
 			return;
 		}
 
-		state.running = true;
-		state.paused = false;
-		state.cancelled = false;
-		state.mode = $('#autoalt-mode').val();
-		state.batch = parseInt($('#autoalt-batch').val(), 10);
-		state.offset = 0;
-		state.success = 0;
-		state.errors = 0;
-		state.skipped = 0;
-		state.total = 0;
+		var i = 0;
+		function nextInBatch() {
+			if (!running || i >= ids.length) {
+				cb();
+				return;
+			}
+			processId(ids[i], function () {
+				i++;
+				setTimeout(nextInBatch, 300);
+			});
+		}
+		nextInBatch();
+	}
 
-		$('#autoalt-log .autoalt-log-content').empty();
-		$('#autoalt-progress').hide();
+	function fetchBatch() {
+		if (!running) return;
 
-		setButtonsRunning();
-		logEntry('info', 'Starting processing (mode: ' + state.mode + ', batch: ' + state.batch + ')...');
+		$.ajax({
+			url: data.ajaxUrl,
+			method: 'POST',
+			data: {
+				action: 'autoalt_get_ids',
+				nonce: data.nonce,
+				mode: mode,
+				offset: offset,
+				batch: batchSize,
+			},
+			success: function (response) {
+				if (!running) return;
 
-		sendBatch();
-	});
+				var d = response.data;
+				total = d.total;
+				var ids = d.ids || [];
 
-	$('#autoalt-pause').on('click', function () {
-		state.paused = true;
-		setButtonsPaused();
-		logEntry('info', 'Paused.');
-	});
+				if (ids.length === 0) {
+					running = false;
+					updateSummary();
+					cleanUrl();
+					return;
+				}
 
-	$('#autoalt-resume').on('click', function () {
-		state.paused = false;
-		setButtonsRunning();
-		logEntry('info', 'Resuming...');
-		sendBatch();
-	});
+				processBatch(ids, function () {
+					offset += ids.length;
+					setTimeout(fetchBatch, 100);
+				});
+			},
+			error: function () {
+				running = false;
+				$notice.find('p').html('<strong>Auto Alt Text:</strong> Failed to fetch image list.');
+				$notice.removeClass('notice-info').addClass('notice-error');
+				cleanUrl();
+			},
+		});
+	}
 
-	$('#autoalt-cancel').on('click', function () {
-		state.cancelled = true;
-		state.paused = false;
-		state.running = false;
-		setButtonsIdle();
-		logEntry('info', 'Cancelled.');
-	});
+	function cleanUrl() {
+		if (!window.history.replaceState) return;
+		var url = window.location.pathname + window.location.search;
+		url = url.replace(/([?&])autoalt_action=[^&]*&?/g, '$1');
+		url = url.replace(/[?&]$/, '');
+		window.history.replaceState({}, document.title, url);
+	}
+
+	fetchBatch();
 })(jQuery);

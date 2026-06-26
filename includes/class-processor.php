@@ -22,34 +22,18 @@ class AutoAlt_Processor {
 		}
 	}
 
-	public function get_total_images( $mode = 'missing' ) {
-		$args = $this->build_query_args( $mode );
-		$args['posts_per_page'] = 1;
-		$args['fields']         = 'ids';
-		unset( $args['offset'] );
-
-		$query = new WP_Query( $args );
-		return (int) $query->found_posts;
-	}
-
 	public function get_image_ids( $mode, $offset, $batch_size ) {
-		$args = $this->build_query_args( $mode );
-		$args['posts_per_page'] = $batch_size;
-		$args['offset']         = $offset;
-		$args['fields']         = 'ids';
-		$args['no_found_rows']  = true;
-		$args['orderby']        = 'ID';
-		$args['order']          = 'ASC';
-
-		$query = new WP_Query( $args );
-		return $query->posts;
-	}
-
-	private function build_query_args( $mode ) {
 		$args = array(
 			'post_type'      => 'attachment',
 			'post_mime_type' => 'image',
 			'post_status'    => 'any',
+			'posts_per_page' => $batch_size,
+			'offset'         => $offset,
+			'fields'         => 'ids',
+			'orderby'        => 'ID',
+			'order'          => 'ASC',
+			'no_found_rows'  => false,
+			'suppress_filters' => true,
 		);
 
 		if ( 'missing' === $mode ) {
@@ -59,82 +43,72 @@ class AutoAlt_Processor {
 					'compare' => 'NOT EXISTS',
 				),
 			);
-		} elseif ( 'poor' === $mode ) {
-			$args['meta_query'] = array(
-				'relation' => 'OR',
-				array(
-					'key'     => '_wp_attachment_image_alt',
-					'compare' => 'NOT EXISTS',
-				),
-				array(
-					'key'     => '_wp_attachment_image_alt',
-					'value'   => '',
-					'compare' => '=',
-				),
-			);
 		}
 
-		return $args;
-	}
-
-	public function process_batch( $mode, $offset, $batch_size ) {
-		$defaults = array(
-			'done'    => false,
-			'results' => array(),
+		$query = new WP_Query( $args );
+		return array(
+			'ids'   => $query->posts,
+			'total' => (int) $query->found_posts,
 		);
-
-		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
-			return array_merge( $defaults, array(
-				'success' => false,
-				'message' => __( 'WordPress 7.0 AI Client not available.', 'auto-alt-text' ),
-			) );
-		}
-
-		$ids = $this->get_image_ids( $mode, $offset, $batch_size );
-
-		if ( empty( $ids ) ) {
-			return array_merge( $defaults, array(
-				'success' => true,
-				'done'    => true,
-			) );
-		}
-
-		$results = array();
-		foreach ( $ids as $id ) {
-			$results[] = $this->generate_alt_text_for_image( $id, $mode );
-		}
-
-		return array_merge( $defaults, array(
-			'success' => true,
-			'done'    => count( $ids ) < $batch_size,
-			'results' => $results,
-		) );
 	}
 
-	private function generate_alt_text_for_image( $attachment_id, $mode = 'missing' ) {
+	public function process_single( $attachment_id, $mode = 'review' ) {
 		$current_alt = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
-
-		$file = get_attached_file( $attachment_id );
-		$mime = get_post_mime_type( $attachment_id );
+		$file        = get_attached_file( $attachment_id );
+		$mime        = get_post_mime_type( $attachment_id );
+		$title       = get_the_title( $attachment_id );
 
 		if ( ! $file || ! file_exists( $file ) ) {
-			return array(
-				'id'     => $attachment_id,
-				'title'  => get_the_title( $attachment_id ),
-				'status' => 'error',
-				'error'  => __( 'File not found on server.', 'auto-alt-text' ),
-			);
+			return $this->result( $attachment_id, $title, 'error', null, __( 'File not found on server.', 'auto-alt-text' ) );
 		}
 
 		if ( ! str_starts_with( $mime, 'image/' ) ) {
+			return $this->result( $attachment_id, $title, 'skipped', null, null, __( 'Not an image.', 'auto-alt-text' ) );
+		}
+
+		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
+			return $this->result( $attachment_id, $title, 'error', null, __( 'AI Client not available.', 'auto-alt-text' ) );
+		}
+
+		if ( 'missing' === $mode && ! empty( $current_alt ) ) {
 			return array(
-				'id'     => $attachment_id,
-				'title'  => get_the_title( $attachment_id ),
-				'status' => 'skipped',
-				'reason' => __( 'Not an image.', 'auto-alt-text' ),
+				'id'        => $attachment_id,
+				'title'     => $title,
+				'status'    => 'skipped',
+				'reason'    => __( 'Already has alt text.', 'auto-alt-text' ),
+				'previous'  => $current_alt,
+				'generated' => $current_alt,
+				'changed'   => false,
 			);
 		}
 
+		list( $prompt, $system ) = $this->build_prompt( $mode, $current_alt );
+
+		$alt_text = wp_ai_client_prompt( $prompt )
+			->using_system_instruction( $system )
+			->with_file( $file, $mime )
+			->generate_text();
+
+		if ( is_wp_error( $alt_text ) ) {
+			return $this->result( $attachment_id, $title, 'error', null, __( 'AI generation failed.', 'auto-alt-text' ) );
+		}
+
+		$alt_text = trim( $alt_text );
+		$changed  = $alt_text !== $current_alt;
+
+		update_post_meta( $attachment_id, '_wp_attachment_image_alt', sanitize_text_field( $alt_text ) );
+
+		return array(
+			'id'        => $attachment_id,
+			'title'     => $title,
+			'status'    => 'success',
+			'previous'  => $current_alt ?: '',
+			'generated' => $alt_text,
+			'changed'   => $changed,
+		);
+	}
+
+	private function build_prompt( $mode, $current_alt ) {
 		if ( 'review' === $mode && ! empty( $current_alt ) ) {
 			$prompt  = "Review the alt text for this image and improve it if necessary.\n";
 			$prompt .= "Current alt text: \"{$current_alt}\"";
@@ -148,7 +122,7 @@ class AutoAlt_Processor {
 			$system .= 'If the image appears to be decorative, return an empty string. ';
 			$system .= 'Return plain text only.';
 		} else {
-			$prompt  = 'Generate concise, descriptive alt text for this image.';
+			$prompt = 'Generate concise, descriptive alt text for this image.';
 
 			$system  = 'You are an accessibility expert generating alt text for website images. ';
 			$system .= 'Keep it under 125 characters. Describe only what is visible. ';
@@ -157,36 +131,24 @@ class AutoAlt_Processor {
 			$system .= 'return an empty string. Return plain text only.';
 		}
 
-		$alt_text = wp_ai_client_prompt( $prompt )
-			->using_system_instruction( $system )
-			->with_file( $file, $mime )
-			->using_model_preference(
-				'claude-sonnet-4-6',
-				'gpt-5.1',
-				'gemini-3.1-pro-preview'
-			)
-			->generate_text();
+		return array( $prompt, $system );
+	}
 
-		if ( is_wp_error( $alt_text ) ) {
-			return array(
-				'id'     => $attachment_id,
-				'title'  => get_the_title( $attachment_id ),
-				'status' => 'error',
-				'error'  => __( 'AI generation failed.', 'auto-alt-text' ),
-			);
-		}
-
-		$changed = $alt_text !== $current_alt;
-
-		update_post_meta( $attachment_id, '_wp_attachment_image_alt', sanitize_text_field( $alt_text ) );
-
-		return array(
-			'id'          => $attachment_id,
-			'title'       => get_the_title( $attachment_id ),
-			'status'      => 'success',
-			'previous'    => $current_alt ?: '',
-			'generated'   => $alt_text,
-			'changed'     => $changed,
+	private function result( $id, $title, $status, $generated = null, $error = null, $reason = null ) {
+		$r = array(
+			'id'    => $id,
+			'title' => $title,
+			'status' => $status,
 		);
+		if ( null !== $generated ) {
+			$r['generated'] = $generated;
+		}
+		if ( null !== $error ) {
+			$r['error'] = $error;
+		}
+		if ( null !== $reason ) {
+			$r['reason'] = $reason;
+		}
+		return $r;
 	}
 }

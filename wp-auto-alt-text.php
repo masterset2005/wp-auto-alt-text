@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Auto Alt Text Generator
  * Plugin URI:  https://github.com/masterset2005/wp-auto-alt-text
- * Description: Uses the WordPress 7.0 AI Client to automatically generate and improve alt text for all images in the media library.
- * Version:     1.0.0
+ * Description: Enhances the WordPress Media Library with "Review & Improve" and "Regenerate" bulk actions for AI-powered alt text using the WP 7.0 AI Client.
+ * Version:     1.0.1
  * Requires at least: 7.0
  * Tested up to: 7.0
  * Requires PHP: 8.0
@@ -17,7 +17,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AUTOALT_VERSION', '1.0.0' );
+define( 'AUTOALT_VERSION', '1.0.1' );
 define( 'AUTOALT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once AUTOALT_PLUGIN_DIR . 'includes/class-processor.php';
@@ -27,7 +27,6 @@ register_activation_hook( __FILE__, array( 'AutoAlt_Processor', 'activation_chec
 
 add_action( 'plugins_loaded', 'autoalt_load_textdomain' );
 add_action( 'plugins_loaded', array( 'AutoAlt_Admin', 'init' ) );
-add_action( 'plugins_loaded', array( 'AutoAlt_Processor', 'init' ) );
 
 function autoalt_load_textdomain() {
 	load_plugin_textdomain( 'auto-alt-text', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
