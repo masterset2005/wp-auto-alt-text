@@ -291,9 +291,12 @@ class AutoAlt_Admin {
 
 			<?php if ( in_array( $action, array( 'missing', 'review', 'regenerate' ), true ) ) : ?>
 				<div class="autoalt-processing-log" style="margin-top:16px;">
-					<h2 id="autoalt-status" style="margin-bottom:8px;">
+					<h2 id="autoalt-status" style="margin-bottom:8px;display:inline-block;">
 						<?php esc_html_e( 'Processing', 'auto-alt-text' ); ?>&hellip;
 					</h2>
+					<a href="#" id="autoalt-stop-link" class="autoalt-stop-link" style="display:inline-block;margin-left:12px;color:#d63638;vertical-align:middle;">
+						<?php esc_html_e( 'stop', 'auto-alt-text' ); ?>
+					</a>
 					<div id="autoalt-results" style="background:#fff;border:1px solid #c3c4c7;padding:12px;max-height:600px;overflow-y:auto;font-family:monospace;font-size:13px;line-height:1.6;"></div>
 				</div>
 			<?php endif; ?>

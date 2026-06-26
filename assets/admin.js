@@ -19,31 +19,41 @@
 	var $resultsContainer = $('#autoalt-results');
 	var isProcessingPage = $resultsContainer.length > 0;
 
-	var $statusEl, $notice;
+	var $statusEl, $notice, $stopLink;
 
 	if (isProcessingPage) {
 		$statusEl = $('#autoalt-status');
+		$stopLink = $('#autoalt-stop-link');
 	} else {
+		$stopLink = $('<a href="#" class="autoalt-stop-link" style="color:#d63638;">stop</a>');
 		$notice = $(
 			'<div class="notice notice-info is-dismissible">' +
-				'<p><strong>Auto Alt Text:</strong> ' + getActionLabel() + ' — starting... <a href="#" class="autoalt-stop-link" style="color:#d63638;">stop</a></p>' +
+				'<p><strong>Auto Alt Text:</strong> ' + getActionLabel() + ' — starting... </p>' +
 				'<div class="autoalt-results" style="margin:8px 0 4px;max-height:320px;overflow-y:auto;font-family:monospace;font-size:12px;line-height:1.5;"></div>' +
 			'</div>'
 		).insertAfter('.wp-header-end');
+		$notice.find('p').append($stopLink);
 		$resultsContainer = $notice.find('.autoalt-results');
 	}
 
 	function setStatus(text) {
 		if (isProcessingPage) {
 			$statusEl.text(text);
+			$stopLink.show();
 		} else {
-			$notice.find('p').html('<strong>Auto Alt Text:</strong> ' + text + ' <a href="#" class="autoalt-stop-link" style="color:#d63638;">stop</a>');
+			$notice.find('p').html('<strong>Auto Alt Text:</strong> ' + text + ' ');
+			$notice.find('p').append($stopLink);
 		}
+	}
+
+	function hideStopLink() {
+		$stopLink.hide();
 	}
 
 	function stop(manual) {
 		if (!running) return;
 		running = false;
+		hideStopLink();
 		if (manual) {
 			var ok = 0, errs = 0;
 			results.forEach(function (r) {
@@ -109,6 +119,7 @@
 	}
 
 	function updateSummary() {
+		hideStopLink();
 		var ok = 0, errs = 0;
 		results.forEach(function (r) {
 			if (r.status === 'success') ok++;
@@ -208,6 +219,7 @@
 			error: function () {
 				if (!running) return;
 				running = false;
+				hideStopLink();
 				setStatus('Failed to fetch image list.');
 				if (!isProcessingPage) {
 					$notice.removeClass('notice-info').addClass('notice-error');

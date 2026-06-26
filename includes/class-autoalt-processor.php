@@ -166,6 +166,17 @@ class AutoAlt_Processor {
 		}
 
 		$alt_text = sanitize_text_field( $alt_text );
+
+		// Strip surrounding double or single quotes (common model mistake).
+		$alt_text = preg_replace( '/^["\']+|["\']+$/', '', $alt_text );
+
+		// Strip leading framing like "An image shows", "The image features", etc.
+		$alt_text = preg_replace(
+			'/^(?:An?|The)\s+(?:image|photo|picture|shot|scene|view)(?:\s+(?:shows?|features?|depicts?|showcases?|displays?|presents?|captures?|of|with|in))?\s+/i',
+			'',
+			$alt_text
+		);
+
 		if ( strlen( $alt_text ) > 125 ) {
 			$alt_text = substr( $alt_text, 0, 125 );
 		}
@@ -201,8 +212,7 @@ class AutoAlt_Processor {
 			. '- Output: short text describing the action or destination, not the image.' . "\n\n"
 			. '3) Informative:' . "\n"
 			. '- Convey the information the image presents. Keep under 125 characters.' . "\n"
-			. '- Describe the purpose, not every pixel.' . "\n"
-			. '- One sentence. Never start with "Image of", "Photo of", "Picture of".';
+			. '- One sentence — a bare description. Never start with "Image of", "Photo of", "Picture of", "An image shows", "The image shows", "The image features", "The image showcases", "The image depicts", "In this image", "This image", or any similar framing. Just describe what is there.';
 	}
 
 	/**
@@ -218,7 +228,11 @@ class AutoAlt_Processor {
 			. '- If OLD is accurate, descriptive, and under 125 chars → keep it.' . "\n"
 			. '- If NEW is better → use NEW.' . "\n"
 			. '- If both have strengths → write a new version combining the best parts.' . "\n\n"
-			. 'Rules: under 125 characters, one sentence, describe only visible content. Avoid "appears", "seems", "suggests".' . "\n"
+			. 'Rules:' . "\n"
+			. '- Under 125 characters, one sentence, describe only visible content.' . "\n"
+			. '- Do NOT wrap the output in quotes.' . "\n"
+			. '- Never start with "Image of", "Photo of", "Picture of", "An image shows", "The image shows", "The image features", "The image showcases", "This image", or "In this image".' . "\n"
+			. '- Avoid "appears", "seems", "suggests".' . "\n"
 			. 'Output exactly one line — the final alt text. Nothing else.';
 	}
 
