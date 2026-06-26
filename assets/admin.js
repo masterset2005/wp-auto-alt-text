@@ -16,14 +16,30 @@
 		return 'Regenerate';
 	}
 
-	var $notice = $(
-		'<div class="notice notice-info is-dismissible">' +
-			'<p><strong>Auto Alt Text:</strong> ' + getActionLabel() + ' — starting... <a href="#" class="autoalt-stop-link" style="color:#d63638;">stop</a></p>' +
-			'<div class="autoalt-results" style="margin:8px 0 4px;max-height:320px;overflow-y:auto;font-family:monospace;font-size:12px;line-height:1.5;"></div>' +
-		'</div>'
-	).insertAfter('.wp-header-end');
+	var $resultsContainer = $('#autoalt-results');
+	var isProcessingPage = $resultsContainer.length > 0;
 
-	var $results = $notice.find('.autoalt-results');
+	var $statusEl, $notice;
+
+	if (isProcessingPage) {
+		$statusEl = $('#autoalt-status');
+	} else {
+		$notice = $(
+			'<div class="notice notice-info is-dismissible">' +
+				'<p><strong>Auto Alt Text:</strong> ' + getActionLabel() + ' — starting... <a href="#" class="autoalt-stop-link" style="color:#d63638;">stop</a></p>' +
+				'<div class="autoalt-results" style="margin:8px 0 4px;max-height:320px;overflow-y:auto;font-family:monospace;font-size:12px;line-height:1.5;"></div>' +
+			'</div>'
+		).insertAfter('.wp-header-end');
+		$resultsContainer = $notice.find('.autoalt-results');
+	}
+
+	function setStatus(text) {
+		if (isProcessingPage) {
+			$statusEl.text(text);
+		} else {
+			$notice.find('p').html('<strong>Auto Alt Text:</strong> ' + text + ' <a href="#" class="autoalt-stop-link" style="color:#d63638;">stop</a>');
+		}
+	}
 
 	function stop(manual) {
 		if (!running) return;
@@ -37,17 +53,25 @@
 			var summary = 'Stopped. ' + done + ' of ' + total + ' processed (' + ok + ' ok';
 			if (errs > 0) summary += ', ' + errs + ' errors';
 			summary += ')';
-			$notice.find('p').html('<strong>Auto Alt Text:</strong> ' + summary);
-			$notice.removeClass('notice-info').addClass('notice-warning');
+			setStatus(summary);
+			if (!isProcessingPage) {
+				$notice.removeClass('notice-info').addClass('notice-warning');
+			}
 		}
 		cleanUrl();
 	}
 
-	$notice.on('click', '.notice-dismiss', function () {
-		stop(true);
-	});
+	if (!isProcessingPage) {
+		$notice.on('click', '.notice-dismiss', function () {
+			stop(true);
+		});
+		$notice.on('click', '.autoalt-stop-link', function (e) {
+			e.preventDefault();
+			stop(true);
+		});
+	}
 
-	$notice.on('click', '.autoalt-stop-link', function (e) {
+	$(document).on('click', '.autoalt-stop-link', function (e) {
 		e.preventDefault();
 		stop(true);
 	});
@@ -80,8 +104,8 @@
 
 		$entry.css('white-space', 'pre-wrap').css('word-break', 'break-word');
 		$entry.text(text);
-		$results.append($entry);
-		$results.scrollTop($results[0].scrollHeight);
+		$resultsContainer.append($entry);
+		$resultsContainer.scrollTop($resultsContainer[0].scrollHeight);
 	}
 
 	function updateSummary() {
@@ -92,12 +116,14 @@
 		});
 		var summary = 'Complete. ' + ok + ' ok';
 		if (errs > 0) summary += ', ' + errs + ' errors';
-		$notice.find('p').html('<strong>Auto Alt Text:</strong> ' + summary);
-		$notice.removeClass('notice-info').addClass(errs > 0 ? 'notice-warning' : 'notice-success');
+		setStatus(summary);
+		if (!isProcessingPage) {
+			$notice.removeClass('notice-info').addClass(errs > 0 ? 'notice-warning' : 'notice-success');
+		}
 	}
 
 	function processId(id, cb) {
-		$notice.find('p').html('<strong>Auto Alt Text:</strong> ' + getActionLabel() + ' — ' + (done + 1) + ' / ' + total + '... <a href="#" class="autoalt-stop-link" style="color:#d63638;">stop</a>');
+		setStatus(getActionLabel() + ' — ' + (done + 1) + ' / ' + total + '...');
 
 		$.ajax({
 			url: data.ajaxUrl,
@@ -182,8 +208,10 @@
 			error: function () {
 				if (!running) return;
 				running = false;
-				$notice.find('p').html('<strong>Auto Alt Text:</strong> Failed to fetch image list.');
-				$notice.removeClass('notice-info').addClass('notice-error');
+				setStatus('Failed to fetch image list.');
+				if (!isProcessingPage) {
+					$notice.removeClass('notice-info').addClass('notice-error');
+				}
 				cleanUrl();
 			},
 		});

@@ -17,6 +17,7 @@ class AutoAlt_Admin {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_processing_script' ) );
 		add_action( 'admin_notices', array( $this, 'quick_action_notice' ) );
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
+		add_action( 'admin_menu', array( $this, 'add_processing_page' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'wp_ajax_autoalt_process_single', array( $this, 'ajax_process_single' ) );
 		add_action( 'wp_ajax_autoalt_get_ids', array( $this, 'ajax_get_ids' ) );
@@ -26,10 +27,6 @@ class AutoAlt_Admin {
 	public function quick_action_notice() {
 		$screen = get_current_screen();
 		if ( ! $screen || 'upload' !== $screen->id ) {
-			return;
-		}
-
-		if ( isset( $_GET['autoalt_action'] ) ) {
 			return;
 		}
 
@@ -62,16 +59,18 @@ class AutoAlt_Admin {
 				&middot;
 				<strong><?php echo esc_html( $stats['total'] ); ?></strong>
 				<?php esc_html_e( 'total images', 'auto-alt-text' ); ?>
+				&middot;
+				<a href="admin.php?page=autoalt-processing"><?php esc_html_e( 'Process', 'auto-alt-text' ); ?></a>
 			</p>
 			<?php if ( (int) $stats['missing'] ) : ?>
-				<a href="upload.php?autoalt_action=missing" class="button button-primary">
+				<a href="admin.php?page=autoalt-processing&autoalt_action=missing" class="button button-primary">
 					<?php esc_html_e( 'Fill Missing Alt Text', 'auto-alt-text' ); ?>
 				</a>
 			<?php endif; ?>
-			<a href="upload.php?autoalt_action=review" class="button">
+			<a href="admin.php?page=autoalt-processing&autoalt_action=review" class="button">
 				<?php esc_html_e( 'Review & Improve All', 'auto-alt-text' ); ?>
 			</a>
-			<a href="upload.php?autoalt_action=regenerate" class="button">
+			<a href="admin.php?page=autoalt-processing&autoalt_action=regenerate" class="button">
 				<?php esc_html_e( 'Regenerate All', 'auto-alt-text' ); ?>
 			</a>
 		</div>
@@ -79,7 +78,12 @@ class AutoAlt_Admin {
 	}
 
 	public function enqueue_processing_script( $hook ) {
-		if ( 'upload.php' !== $hook ) {
+		if ( 'upload.php' === $hook ) {
+			$action = isset( $_GET['autoalt_action'] ) ? sanitize_key( $_GET['autoalt_action'] ) : '';
+			if ( ! in_array( $action, array( 'missing', 'review', 'regenerate' ), true ) ) {
+				return;
+			}
+		} elseif ( 'media_page_autoalt-processing' !== $hook ) {
 			return;
 		}
 
@@ -115,14 +119,69 @@ class AutoAlt_Admin {
 	}
 
 	public function add_settings_page() {
-		add_submenu_page(
-			'upload.php',
-			__( 'Auto Alt Text Settings', 'auto-alt-text' ),
+		add_options_page(
+			__( 'Auto Alt Text', 'auto-alt-text' ),
 			__( 'Auto Alt Text', 'auto-alt-text' ),
 			'manage_options',
 			'auto-alt-text',
 			array( $this, 'render_settings_page' )
 		);
+	}
+
+	public function add_processing_page() {
+		add_media_page(
+			__( 'Auto Alt Text Processing', 'auto-alt-text' ),
+			__( 'Auto Alt Text Processing', 'auto-alt-text' ),
+			'edit_posts',
+			'autoalt-processing',
+			array( $this, 'render_processing_page' )
+		);
+	}
+
+	public function render_processing_page() {
+		$action = isset( $_GET['autoalt_action'] ) ? sanitize_key( $_GET['autoalt_action'] ) : '';
+		$stats  = AutoAlt_Processor::init()->get_stats();
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'Auto Alt Text Processing', 'auto-alt-text' ); ?></h1>
+
+			<div class="notice notice-info" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;">
+				<p style="margin:8px 0;">
+					<strong><?php echo esc_html( $stats['missing'] ); ?></strong>
+					<?php esc_html_e( 'missing', 'auto-alt-text' ); ?>
+					&middot;
+					<strong><?php echo esc_html( $stats['too_long'] ); ?></strong>
+					<?php esc_html_e( 'too long', 'auto-alt-text' ); ?>
+					&middot;
+					<strong><?php echo esc_html( $stats['too_short'] ); ?></strong>
+					<?php esc_html_e( 'too short', 'auto-alt-text' ); ?>
+					&middot;
+					<strong><?php echo esc_html( $stats['total'] ); ?></strong>
+					<?php esc_html_e( 'total images', 'auto-alt-text' ); ?>
+				</p>
+				<?php if ( (int) $stats['missing'] ) : ?>
+					<a href="admin.php?page=autoalt-processing&autoalt_action=missing" class="button button-primary">
+						<?php esc_html_e( 'Fill Missing Alt Text', 'auto-alt-text' ); ?>
+					</a>
+				<?php endif; ?>
+				<a href="admin.php?page=autoalt-processing&autoalt_action=review" class="button">
+					<?php esc_html_e( 'Review & Improve All', 'auto-alt-text' ); ?>
+				</a>
+				<a href="admin.php?page=autoalt-processing&autoalt_action=regenerate" class="button">
+					<?php esc_html_e( 'Regenerate All', 'auto-alt-text' ); ?>
+				</a>
+			</div>
+
+			<?php if ( in_array( $action, array( 'missing', 'review', 'regenerate' ), true ) ) : ?>
+				<div class="autoalt-processing-log" style="margin-top:16px;">
+					<h2 id="autoalt-status" style="margin-bottom:8px;">
+						<?php echo esc_html__( 'Processing', 'auto-alt-text' ); ?>&hellip;
+					</h2>
+					<div id="autoalt-results" style="background:#fff;border:1px solid #c3c4c7;padding:12px;max-height:600px;overflow-y:auto;font-family:monospace;font-size:13px;line-height:1.6;"></div>
+				</div>
+			<?php endif; ?>
+		</div>
+		<?php
 	}
 
 	public function register_settings() {
