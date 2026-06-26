@@ -520,7 +520,8 @@ class AutoAlt_Admin {
 			return;
 		}
 
-		if ( ! str_starts_with( get_post_mime_type( $attachment_id ), 'image/' ) ) {
+		$mime = get_post_mime_type( $attachment_id );
+		if ( ! str_starts_with( $mime, 'image/' ) || 'image/svg+xml' === $mime ) {
 			return;
 		}
 

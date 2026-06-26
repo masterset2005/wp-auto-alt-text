@@ -65,10 +65,20 @@ class AutoAlt_Processor {
 			LEFT JOIN {$wpdb->postmeta} m ON p.ID = m.post_id AND m.meta_key = '_wp_attachment_image_alt'
 			WHERE p.post_type = 'attachment'
 			  AND p.post_mime_type LIKE 'image/%'
+			  AND p.post_mime_type != 'image/svg+xml'
 			"
 		);
 
-		return $wpdb->get_row( $sql, ARRAY_A );
+		$row = $wpdb->get_row( $sql, ARRAY_A );
+		if ( null === $row ) {
+			return array(
+				'total'    => '0',
+				'missing'  => '0',
+				'too_long' => '0',
+				'too_short' => '0',
+			);
+		}
+		return $row;
 	}
 
 	/**
@@ -95,9 +105,15 @@ class AutoAlt_Processor {
 
 		if ( 'missing' === $mode ) {
 			$args['meta_query'] = array(
+				'relation' => 'OR',
 				array(
 					'key'     => '_wp_attachment_image_alt',
 					'compare' => 'NOT EXISTS',
+				),
+				array(
+					'key'     => '_wp_attachment_image_alt',
+					'value'   => '',
+					'compare' => '=',
 				),
 			);
 		}
@@ -130,6 +146,10 @@ class AutoAlt_Processor {
 			return $this->result( $attachment_id, $title, 'skipped', null, null, __( 'Not an image.', 'auto-alt-text' ) );
 		}
 
+		if ( 'image/svg+xml' === $mime ) {
+			return $this->result( $attachment_id, $title, 'skipped', null, null, __( 'SVG images are not supported.', 'auto-alt-text' ) );
+		}
+
 		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
 			return $this->result( $attachment_id, $title, 'error', null, __( 'AI Client not available.', 'auto-alt-text' ) );
 		}
@@ -154,7 +174,12 @@ class AutoAlt_Processor {
 			->generate_text();
 
 		if ( is_wp_error( $alt_text ) ) {
-			return $this->result( $attachment_id, $title, 'error', null, __( 'AI generation failed.', 'auto-alt-text' ) );
+			$msg = $alt_text->get_error_message();
+			return $this->result( $attachment_id, $title, 'error', null, sprintf(
+				/* translators: %s: error message from AI provider */
+				__( 'AI generation failed: %s', 'auto-alt-text' ),
+				$msg
+			) );
 		}
 
 		if ( preg_match( '/\[\[DECORATIVE(?:_ALT)?\]\]/i', $alt_text ) ) {

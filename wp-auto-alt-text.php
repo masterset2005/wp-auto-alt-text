@@ -7,7 +7,7 @@
  *
  * Plugin Name: Auto Alt Text Generator
  * Plugin URI:  https://github.com/masterset2005/wp-auto-alt-text
- * Description: Enhances the WordPress Media Library with "Review & Improve" and "Regenerate" bulk actions for AI-powered alt text using the WP 7.0 AI Client. Supports browser-based, WP-Cron background, and WP-CLI processing.
+ * Description: Fill missing, review and improve, or regenerate alt text across your entire media library. One-click quick-action buttons, WP-Cron background processing, and WP-CLI support. Powered by the WordPress 7.0 AI Client.
  * Version:     1.2.0
  * Requires at least: 7.0
  * Tested up to: 7.0
