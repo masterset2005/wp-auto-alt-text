@@ -94,9 +94,6 @@ class AutoAlt_Processor {
 		}
 
 		$alt_text = sanitize_text_field( $alt_text );
-		if ( strlen( $alt_text ) > 125 ) {
-			$alt_text = substr( $alt_text, 0, 125 );
-		}
 		$changed  = $alt_text !== $current_alt;
 
 		update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt_text );
