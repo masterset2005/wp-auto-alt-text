@@ -22,6 +22,22 @@ class AutoAlt_Processor {
 		}
 	}
 
+	public function get_stats() {
+		global $wpdb;
+
+		return $wpdb->get_row( "
+			SELECT
+				COUNT(*) AS total,
+				SUM( m.meta_value IS NULL OR m.meta_value = '' ) AS missing,
+				SUM( m.meta_value IS NOT NULL AND m.meta_value != '' AND CHAR_LENGTH( m.meta_value ) > 125 ) AS too_long,
+				SUM( m.meta_value IS NOT NULL AND m.meta_value != '' AND CHAR_LENGTH( m.meta_value ) < 5 ) AS too_short
+			FROM {$wpdb->posts} p
+			LEFT JOIN {$wpdb->postmeta} m ON p.ID = m.post_id AND m.meta_key = '_wp_attachment_image_alt'
+			WHERE p.post_type = 'attachment'
+			  AND p.post_mime_type LIKE 'image/%'
+		", ARRAY_A );
+	}
+
 	public function get_image_ids( $mode, $offset, $batch_size ) {
 		$args = array(
 			'post_type'      => 'attachment',

@@ -14,36 +14,12 @@ class AutoAlt_Admin {
 	}
 
 	private function __construct() {
-		add_filter( 'bulk_actions-upload', array( $this, 'register_bulk_actions' ) );
-		add_filter( 'handle_bulk_actions-upload', array( $this, 'handle_bulk_action' ), 10, 3 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_processing_script' ) );
 		add_action( 'admin_notices', array( $this, 'quick_action_notice' ) );
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'wp_ajax_autoalt_process_single', array( $this, 'ajax_process_single' ) );
 		add_action( 'wp_ajax_autoalt_get_ids', array( $this, 'ajax_get_ids' ) );
-	}
-
-	public function register_bulk_actions( $actions ) {
-		$actions['autoalt_missing']     = __( 'Fill Missing Alt Text', 'auto-alt-text' );
-		$actions['autoalt_review']      = __( 'Review & Improve Alt Text', 'auto-alt-text' );
-		$actions['autoalt_regenerate']  = __( 'Regenerate Alt Text', 'auto-alt-text' );
-		return $actions;
-	}
-
-	public function handle_bulk_action( $redirect, $action, $post_ids ) {
-		if ( ! in_array( $action, array( 'autoalt_missing', 'autoalt_review', 'autoalt_regenerate' ), true ) ) {
-			return $redirect;
-		}
-
-		$mode_map = array(
-			'autoalt_missing'    => 'missing',
-			'autoalt_review'     => 'review',
-			'autoalt_regenerate' => 'regenerate',
-		);
-
-		$redirect = add_query_arg( 'autoalt_action', $mode_map[ $action ], $redirect );
-		return $redirect;
 	}
 
 	public function quick_action_notice() {
@@ -60,27 +36,33 @@ class AutoAlt_Admin {
 			return;
 		}
 
-		$processor = AutoAlt_Processor::init();
+		$stats = AutoAlt_Processor::init()->get_stats();
 
-		$missing = $processor->get_image_ids( 'missing', 0, 1 );
-		$all     = $processor->get_image_ids( 'review', 0, 1 );
+		if ( empty( $stats['total'] ) ) {
+			return;
+		}
 
-		if ( empty( $missing['total'] ) && empty( $all['total'] ) ) {
+		$needs_help = (int) $stats['missing'] + (int) $stats['too_long'] + (int) $stats['too_short'];
+		if ( ! $needs_help ) {
 			return;
 		}
 
 		?>
 		<div class="notice notice-info" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;">
 			<p style="margin:8px 0;">
-				<?php if ( $missing['total'] ) : ?>
-					<strong><?php echo esc_html( $missing['total'] ); ?></strong>
-					<?php esc_html_e( 'images missing alt text', 'auto-alt-text' ); ?>
-					&middot;
-				<?php endif; ?>
-				<strong><?php echo esc_html( $all['total'] ); ?></strong>
+				<strong><?php echo esc_html( $stats['missing'] ); ?></strong>
+				<?php esc_html_e( 'missing', 'auto-alt-text' ); ?>
+				&middot;
+				<strong><?php echo esc_html( $stats['too_long'] ); ?></strong>
+				<?php esc_html_e( 'too long', 'auto-alt-text' ); ?>
+				&middot;
+				<strong><?php echo esc_html( $stats['too_short'] ); ?></strong>
+				<?php esc_html_e( 'too short', 'auto-alt-text' ); ?>
+				&middot;
+				<strong><?php echo esc_html( $stats['total'] ); ?></strong>
 				<?php esc_html_e( 'total images', 'auto-alt-text' ); ?>
 			</p>
-			<?php if ( $missing['total'] ) : ?>
+			<?php if ( (int) $stats['missing'] ) : ?>
 				<a href="upload.php?autoalt_action=missing" class="button button-primary">
 					<?php esc_html_e( 'Fill Missing Alt Text', 'auto-alt-text' ); ?>
 				</a>
