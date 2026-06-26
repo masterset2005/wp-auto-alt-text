@@ -109,7 +109,11 @@ class AutoAlt_Processor {
 			return $this->result( $attachment_id, $title, 'error', null, __( 'AI generation failed.', 'auto-alt-text' ) );
 		}
 
-		if ( 'review' === $mode && ! empty( $current_alt ) ) {
+		if ( preg_match( '/\[\[DECORATIVE(?:_ALT)?\]\]/i', $alt_text ) ) {
+			$alt_text = '';
+		}
+
+		if ( 'review' === $mode && ! empty( $current_alt ) && '' !== $alt_text ) {
 			$alt_text = $this->compare_alt_texts( $current_alt, $alt_text );
 		}
 
@@ -132,22 +136,13 @@ class AutoAlt_Processor {
 	}
 
 	public function default_system_prompt() {
-		return 'You are an alt text generator. Describe the image briefly.' . "\n\n"
-			. 'RULES (obey exactly):' . "\n"
-			. '1. Output MUST be under 125 characters.' . "\n"
-			. '2. Exactly one sentence. No periods except at the end.' . "\n"
-			. '3. Never start with "The image", "This image", "The photo", "This photo", "In the".' . "\n"
-			. '4. Never use "seems", "appears", "maybe", "evokes", "indicates", "suggests".' . "\n"
-			. '5. If decorative background with no clear subject, output: (empty)' . "\n\n"
-			. 'EXAMPLES (memorize this format):' . "\n"
-			. 'Boy in Batman shirt sitting against a yellow wall.' . "\n"
-			. 'Two girls in dresses pose in front of a lace-curtained window.' . "\n"
-			. 'Man in traditional garb carries two pail-like cups on a pole.' . "\n"
-			. '(empty)' . "\n\n"
-			. 'FAILURE EXAMPLES (never do this):' . "\n"
-			. 'BAD: "The image shows a boy in a Batman shirt"' . "\n"
-			. 'BAD: "This photo captures two girls posing"' . "\n"
-			. 'BAD: "A man appears to be carrying cups"';
+		return 'You are an accessibility expert generating alt text for website images following the W3C Alt Decision Tree.' . "\n\n"
+			. 'Core principle: Alt text must convey the information or purpose the image serves. If the image disappeared, what would be lost for someone who cannot see it?' . "\n\n"
+			. 'Decision order:' . "\n"
+			. '1. Is it decorative or redundant? (spacer, flourish, decorative border, or information already in adjacent text) → return exactly this: [[DECORATIVE]]' . "\n"
+			. '2. Is it functional? (icon button, linked logo, image-as-link with no other link text) → describe the action or destination, not the image.' . "\n"
+			. '3. Informative: convey the information the image presents. Keep it under 125 characters.' . "\n\n"
+			. 'Never start with "Image of", "Photo of", "Picture of". One sentence. Describe the purpose, not just pixels.';
 	}
 
 	private function build_prompt( $mode, $current_alt ) {
