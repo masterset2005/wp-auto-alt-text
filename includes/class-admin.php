@@ -20,6 +20,7 @@ class AutoAlt_Admin {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'wp_ajax_autoalt_process_single', array( $this, 'ajax_process_single' ) );
 		add_action( 'wp_ajax_autoalt_get_ids', array( $this, 'ajax_get_ids' ) );
+		add_action( 'add_attachment', array( $this, 'auto_generate_on_upload' ) );
 	}
 
 	public function quick_action_notice() {
@@ -136,6 +137,11 @@ class AutoAlt_Admin {
 			'sanitize_callback' => 'sanitize_textarea_field',
 			'default'           => '',
 		) );
+
+		register_setting( 'autoalt_settings', 'autoalt_auto_generate', array(
+			'type'              => 'boolean',
+			'default'           => false,
+		) );
 	}
 
 	public function sanitize_batch_size( $value ) {
@@ -198,11 +204,41 @@ class AutoAlt_Admin {
 							</details>
 						</td>
 					</tr>
+					<tr>
+						<th scope="row">
+							<?php esc_html_e( 'Auto-Generate on Upload', 'auto-alt-text' ); ?>
+						</th>
+						<td>
+							<label for="autoalt_auto_generate">
+								<input type="checkbox" id="autoalt_auto_generate" name="autoalt_auto_generate" value="1" <?php checked( get_option( 'autoalt_auto_generate', false ) ); ?>>
+								<?php esc_html_e( 'Generate alt text automatically when new images are uploaded', 'auto-alt-text' ); ?>
+							</label>
+							<p class="description">
+								<?php esc_html_e( 'Processes each new image with the AI model during upload. May add a delay depending on your AI provider.', 'auto-alt-text' ); ?>
+							</p>
+						</td>
+					</tr>
 				</table>
 				<?php submit_button(); ?>
 			</form>
 		</div>
 		<?php
+	}
+
+	public function auto_generate_on_upload( $attachment_id ) {
+		if ( ! get_option( 'autoalt_auto_generate', false ) ) {
+			return;
+		}
+
+		if ( ! function_exists( 'wp_ai_client_prompt' ) ) {
+			return;
+		}
+
+		if ( ! str_starts_with( get_post_mime_type( $attachment_id ), 'image/' ) ) {
+			return;
+		}
+
+		AutoAlt_Processor::init()->process_single( $attachment_id, 'missing' );
 	}
 
 	public function ajax_get_ids() {
