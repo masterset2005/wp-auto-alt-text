@@ -24,7 +24,7 @@ Auto Alt Text Generator adds a **quick-action notice bar** at the top of your Me
 * **Stop anytime** — Click the stop link in the progress notice or dismiss the notice to cancel mid-processing.
 * **Alt text quality stats** — The notice bar shows counts of missing, too-long (>125 chars), and too-short (<5 chars) alt text.
 * **W3C Alt Decision Tree prompt** — Default system prompt follows the W3C framework: decorative → functional → informative. Returns empty alt for decorative images.
-* **Customizable system prompt** — Edit the system prompt in settings to add few-shot examples tuned for your specific AI model.
+* **Customizable system prompts** — Separate editable prompts for the vision generation step and the text-only comparison step. Tune both for your specific model.
 * **Auto-generate on upload** — Optional setting to generate alt text automatically when new images are uploaded.
 * **Settings page** — Configure batch size, system prompt, and auto-generation under Media > Auto Alt Text.
 * **Sequential processing** — Images are processed one by one with a visible progress notice and per-image results.

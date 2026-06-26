@@ -142,6 +142,12 @@ class AutoAlt_Admin {
 			'type'              => 'boolean',
 			'default'           => false,
 		) );
+
+		register_setting( 'autoalt_settings', 'autoalt_compare_prompt', array(
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_textarea_field',
+			'default'           => '',
+		) );
 	}
 
 	public function sanitize_batch_size( $value ) {
@@ -200,6 +206,25 @@ class AutoAlt_Admin {
 								<summary><?php esc_html_e( 'Default prompt (click to expand)', 'auto-alt-text' ); ?></summary>
 								<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;"><?php
 									echo esc_textarea( AutoAlt_Processor::init()->default_system_prompt() );
+								?></pre>
+							</details>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="autoalt_compare_prompt"><?php esc_html_e( 'Comparison Prompt', 'auto-alt-text' ); ?></label>
+						</th>
+						<td>
+							<textarea id="autoalt_compare_prompt" name="autoalt_compare_prompt" rows="8" class="large-text code"><?php
+								echo esc_textarea( get_option( 'autoalt_compare_prompt', '' ) );
+							?></textarea>
+							<p class="description">
+								<?php esc_html_e( 'System instruction for the text-only comparison step (Review mode). Given old and new alt text, it decides which to keep or combines both. Leave empty to use the built-in default.', 'auto-alt-text' ); ?>
+							</p>
+							<details style="margin-top:8px;">
+								<summary><?php esc_html_e( 'Default comparison prompt (click to expand)', 'auto-alt-text' ); ?></summary>
+								<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;"><?php
+									echo esc_textarea( AutoAlt_Processor::init()->default_compare_prompt() );
 								?></pre>
 							</details>
 						</td>

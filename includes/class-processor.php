@@ -136,13 +136,32 @@ class AutoAlt_Processor {
 	}
 
 	public function default_system_prompt() {
-		return 'You are an accessibility expert generating alt text for website images following the W3C Alt Decision Tree.' . "\n\n"
-			. 'Core principle: Alt text must convey the information or purpose the image serves. If the image disappeared, what would be lost for someone who cannot see it?' . "\n\n"
-			. 'Decision order:' . "\n"
-			. '1. Is it decorative or redundant? (spacer, flourish, decorative border, or information already in adjacent text) → return exactly this: [[DECORATIVE]]' . "\n"
-			. '2. Is it functional? (icon button, linked logo, image-as-link with no other link text) → describe the action or destination, not the image.' . "\n"
-			. '3. Informative: convey the information the image presents. Keep it under 125 characters.' . "\n\n"
-			. 'Never start with "Image of", "Photo of", "Picture of". One sentence. Describe the purpose, not just pixels.';
+		return 'You are an accessibility expert that proposes alternative (alt) text for HTML images. Your output must follow the same decisions authors make with the W3C "An alt Decision Tree" (decorative vs functional vs informative vs complex images).' . "\n\n"
+			. 'Core rule: Alt text is not always a description of what the picture looks like. It must convey the information or purpose that the image serves in this specific context. If the image disappeared, what would be lost for someone who cannot see it—that is what belongs in alt text (or in empty alt when nothing should be announced).' . "\n\n"
+			. 'Follow this order:' . "\n\n"
+			. '1) Decorative or redundant?' . "\n"
+			. '- Purely decorative (flourish, spacer, visual-only styling) OR the same information is already in adjacent text.' . "\n"
+			. '- Output exactly: [[DECORATIVE_ALT]]' . "\n"
+			. '- Do not describe the image for decorative/redundant cases.' . "\n\n"
+			. '2) Functional (image is a control or the main content of a link or button)?' . "\n"
+			. '- Examples: linked image with no other text in the link; icon-only button; logo linking home.' . "\n"
+			. '- Output: short text describing the action or destination, not the image.' . "\n\n"
+			. '3) Informative:' . "\n"
+			. '- Convey the information the image presents. Keep under 125 characters.' . "\n"
+			. '- Describe the purpose, not every pixel.' . "\n"
+			. '- One sentence. Never start with "Image of", "Photo of", "Picture of".';
+	}
+
+	public function default_compare_prompt() {
+		return 'You are an alt text quality checker comparing two alt text entries for the same image.' . "\n\n"
+			. 'OLD: presented for reference.' . "\n"
+			. 'NEW: generated fresh from the image.' . "\n\n"
+			. 'Decide what to keep:' . "\n"
+			. '- If OLD is accurate, descriptive, and under 125 chars → keep it.' . "\n"
+			. '- If NEW is better → use NEW.' . "\n"
+			. '- If both have strengths → write a new version combining the best parts.' . "\n\n"
+			. 'Rules: under 125 characters, one sentence, describe only visible content. Avoid "appears", "seems", "suggests".' . "\n"
+			. 'Output exactly one line — the final alt text. Nothing else.';
 	}
 
 	private function build_prompt( $mode, $current_alt ) {
@@ -159,17 +178,14 @@ class AutoAlt_Processor {
 	}
 
 	private function compare_alt_texts( $old, $new ) {
-		$prompt = "Compare these two alt text entries for the same image.\n\n"
-			. "OLD: \"{$old}\"\n"
-			. "NEW: \"{$new}\"\n\n"
-			. "Pick the better one, or write a new one combining the best of both.\n"
-			. "Return ONLY the final alt text — nothing else.";
+		$custom = get_option( 'autoalt_compare_prompt', '' );
+		if ( ! empty( trim( $custom ) ) ) {
+			$system = $custom;
+		} else {
+			$system = $this->default_compare_prompt();
+		}
 
-		$system  = 'You are an alt text quality checker. ';
-		$system .= 'Keep it under 125 characters. ';
-		$system .= 'One sentence. Describe only visible objects. ';
-		$system .= 'Avoid "appears", "seems", "suggests". ';
-		$system .= 'Output exactly one line — the final alt text.';
+		$prompt = "OLD: \"{$old}\"\nNEW: \"{$new}\"";
 
 		$result = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system )
