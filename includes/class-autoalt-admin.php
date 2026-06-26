@@ -38,6 +38,9 @@ class AutoAlt_Admin {
 	private function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_processing_script' ) );
 		add_action( 'admin_notices', array( $this, 'quick_action_notice' ) );
+		add_action( 'admin_notices', array( $this, 'generated_notice' ) );
+		add_filter( 'wp_prepare_attachment_for_js', array( $this, 'mark_auto_generated' ), 10, 2 );
+		add_action( 'admin_footer-upload.php', array( $this, 'generated_script' ) );
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
 		add_action( 'admin_menu', array( $this, 'add_processing_page' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
@@ -377,6 +380,15 @@ class AutoAlt_Admin {
 
 		register_setting(
 			'autoalt_settings',
+			'autoalt_show_generated',
+			array(
+				'type'    => 'boolean',
+				'default' => false,
+			)
+		);
+
+		register_setting(
+			'autoalt_settings',
 			'autoalt_compare_prompt',
 			array(
 				'type'              => 'string',
@@ -498,9 +510,113 @@ class AutoAlt_Admin {
 							</p>
 						</td>
 					</tr>
+					<tr>
+						<th scope="row">
+							<?php esc_html_e( 'Show Alt Text After Upload', 'auto-alt-text' ); ?>
+						</th>
+						<td>
+							<label for="autoalt_show_generated">
+								<input type="checkbox" id="autoalt_show_generated" name="autoalt_show_generated" value="1" <?php checked( get_option( 'autoalt_show_generated', false ) ); ?>>
+								<?php esc_html_e( 'Show generated alt text as a notice on the Media Library page after upload', 'auto-alt-text' ); ?>
+							</label>
+							<p class="description">
+								<?php esc_html_e( 'When enabled, a notice appears on the Media Library page showing alt text generated for newly uploaded images.', 'auto-alt-text' ); ?>
+							</p>
+						</td>
+					</tr>
 				</table>
 				<?php submit_button(); ?>
 			</form>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Mark auto-generated attachments with a flag for JS consumption.
+	 *
+	 * @param array      $response   Attachment data for JS.
+	 * @param WP_Post    $attachment Attachment post object.
+	 * @return array
+	 */
+	public function mark_auto_generated( $response, $attachment ) {
+		if ( ! get_option( 'autoalt_show_generated', false ) ) {
+			return $response;
+		}
+
+		$data = get_user_meta( get_current_user_id(), 'autoalt_last_generated', true );
+		if ( ! empty( $data['attachment_id'] ) && (int) $data['attachment_id'] === $attachment->ID ) {
+			$response['autoalt_generated'] = $data['alt_text'];
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Inline script to show a toast notification when auto-generated alt text is detected
+	 * in the JS attachment response (fires immediately after upload, no refresh needed).
+	 *
+	 * @return void
+	 */
+	public function generated_script() {
+		if ( ! get_option( 'autoalt_show_generated', false ) ) {
+			return;
+		}
+		?>
+		<script>
+		jQuery(function($) {
+			var orig = wp.media.view.Attachment.Library;
+			if (!orig) return;
+			wp.media.view.Attachment.Library = orig.extend({
+				render: function() {
+					var r = orig.prototype.render.apply(this, arguments);
+					if (this.model && this.model.get('autoalt_generated')) {
+						var alt = this.model.get('autoalt_generated');
+						this.$el.append(
+							'<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;padding:2px 4px;line-height:1.3;word-break:break-word;max-height:100%;overflow:hidden;">AI: ' + $('<span>').text(alt).html() + '</div>'
+						);
+					}
+					return r;
+				}
+			});
+		});
+		</script>
+		<?php
+	}
+
+	/**
+	 * Show a notice on the Media Library page with the last auto-generated alt text.
+	 *
+	 * @return void
+	 */
+	public function generated_notice() {
+		if ( ! get_option( 'autoalt_show_generated', false ) ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if ( ! $screen || 'upload' !== $screen->id ) {
+			return;
+		}
+
+		$data = get_user_meta( get_current_user_id(), 'autoalt_last_generated', true );
+		if ( empty( $data ) || empty( $data['alt_text'] ) ) {
+			return;
+		}
+
+		delete_user_meta( get_current_user_id(), 'autoalt_last_generated' );
+
+		$thumbnail = wp_get_attachment_image( $data['attachment_id'], array( 60, 60 ), true );
+		?>
+		<div class="notice notice-success is-dismissible">
+			<p style="display:flex;align-items:center;gap:12px;margin:8px 0;">
+				<?php if ( $thumbnail ) : ?>
+					<?php echo $thumbnail; //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php endif; ?>
+				<span>
+					<strong><?php esc_html_e( 'Auto Alt Text Generated:', 'auto-alt-text' ); ?></strong>
+					<?php echo esc_html( $data['alt_text'] ); ?>
+				</span>
+			</p>
 		</div>
 		<?php
 	}
@@ -525,7 +641,18 @@ class AutoAlt_Admin {
 			return;
 		}
 
-		AutoAlt_Processor::init()->process_single( $attachment_id, 'missing' );
+		$result = AutoAlt_Processor::init()->process_single( $attachment_id, 'missing' );
+
+		if ( get_option( 'autoalt_show_generated', false ) && 'success' === $result['status'] ) {
+			update_user_meta(
+				get_current_user_id(),
+				'autoalt_last_generated',
+				array(
+					'attachment_id' => $attachment_id,
+					'alt_text'      => $result['generated'],
+				)
+			);
+		}
 	}
 
 	/**
