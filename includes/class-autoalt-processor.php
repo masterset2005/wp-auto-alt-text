@@ -221,31 +221,28 @@ class AutoAlt_Processor {
 	}
 
 	/**
-	 * Default prompt for the text-only comparison step (Review mode).
+	 * Default prompt for the text-only comparison step (Synthesizer).
 	 *
 	 * @return string
 	 */
 	public function default_compare_prompt() {
-		return 'You are an accessibility expert comparing two alt text entries for the same image. Your decisions must follow the W3C "An alt Decision Tree" (decorative vs functional vs informative vs complex images).' . "\n\n"
-			. 'Core rule: Alt text must convey the information or purpose the image serves. If the image disappeared, what would be lost for someone who cannot see it — that belongs in alt text (or empty alt when nothing should be announced).' . "\n\n"
-			. 'Follow this order:' . "\n"
-			. '1) Decorative/redundant → output: [[DECORATIVE_ALT]] (empty alt). Do not describe decorative images, and do not include labels like "Decorative:".' . "\n"
-			. '2) Functional → short text describing the action or destination. Do not include labels like "Functional:".' . "\n"
-			. '3) Informative → convey the information, not every pixel. Do not include labels like "Informative:".' . "\n\n"
-			. 'OLD (existing alt text): presented for reference.' . "\n"
-			. 'NEW (freshly generated from the image): may or may not be correct.' . "\n\n"
-			. 'Decide what to keep:' . "\n"
-			. '- If OLD follows the W3C rules above and is accurate/descriptive → keep it.' . "\n"
-			. '- If NEW is better → use NEW.' . "\n"
-			. '- If both have strengths → write a new version combining the best parts.' . "\n"
-			. '- If neither is appropriate → write new alt text from scratch following the rules above.' . "\n\n"
-			. 'Rules:' . "\n"
-			. '- Under 125 characters, one sentence, describe only visible content.' . "\n"
-			. '- Do NOT wrap the output in quotes.' . "\n"
-			. '- Never include labels like "Informative:", "Decorative:", or "Functional:".' . "\n"
-			. '- Never start with "Image of", "Photo of", "Picture of", "An image shows", "The image shows", "The image features", "The image showcases", "The image depicts", "In this image", "This image", or any similar framing.' . "\n"
-			. '- Avoid "appears", "seems", "suggests".' . "\n"
-			. 'Output exactly one line — the final alt text. Nothing else.';
+		return 'You are an accessibility expert generating the final alt text for an image. You receive contextual information, any existing alt text, and a raw visual description.' . "\n\n"
+			. 'Follow the W3C Alt Decision Tree in this exact order:' . "\n"
+			. '1) Decorative or redundant → output [[DECORATIVE_ALT]] only.' . "\n"
+			. '2) Functional → output a short action or destination phrase.' . "\n"
+			. '3) Informative → output one concise sentence conveying essential information.' . "\n"
+			. '4) Complex → output one short summary sentence capturing the main point.' . "\n\n"
+			. 'CORE PRINCIPLE:' . "\n"
+			. 'Alt text conveys the information or purpose the image serves in THIS context. If removing the image removes no meaningful information, output [[DECORATIVE_ALT]].' . "\n\n"
+			. 'HARD OUTPUT RULES:' . "\n"
+			. '- Output exactly ONE sentence under 125 characters.' . "\n"
+			. '- Output ONLY the final alt text. No explanations.' . "\n"
+			. '- Do NOT wrap in quotes.' . "\n"
+			. '- Do NOT include labels like "Informative:" or "Functional:".' . "\n"
+			. '- Do NOT start with: "Image of", "Photo of", "Picture of", "An image shows", "The image shows", "This image", or similar.' . "\n"
+			. '- Do NOT use "appears", "seems", "suggests", or uncertainty language.' . "\n"
+			. '- If you violate ANY rule, output [[DECORATIVE_ALT]].' . "\n\n"
+			. 'Your job is to synthesize the context and the visual description to determine the correct alt text category and produce the final output.';
 	}
 
 	/**
@@ -281,9 +278,9 @@ class AutoAlt_Processor {
 	 * @return array{0: string, 1: string}
 	 */
 	private function build_prompt() {
-		// Vision model focuses purely on describing visual content, not accessibility.
-		$system = 'You are a visual description expert. Your goal is to describe the subjects, actions, setting, and details in the image accurately and concisely. Do not worry about accessibility labels or strict length constraints, just be descriptive and factual.';
-		$prompt = 'Describe this image.';
+		// Optimized for small models: purely visual, no accessibility constraints.
+		$system = 'You are a visual description specialist. Describe only what is visibly present in the image. List subjects, objects, actions, setting, text, and notable details. Do not infer purpose, meaning, emotions, or context. Do not shorten for accessibility or style. Be factual, neutral, and concise.';
+		$prompt = 'Describe everything visible in this image.';
 
 		return array( $prompt, $system );
 	}
@@ -304,7 +301,8 @@ class AutoAlt_Processor {
 		}
 
 		$prompt = "CONTEXT:\n" . print_r( $context, true ) . "\n\n" .
-		          "NEW (freshly generated from the image): \"{$new_alt}\"";
+		          "VISUAL DESCRIPTION:\n\"{$new_alt}\"\n\n" .
+		          "Generate the final alt text following all system rules.";
 
 		$result = wp_ai_client_prompt( $prompt )
 			->using_system_instruction( $system )
