@@ -84,14 +84,15 @@ class AutoAlt_Processor {
 	}
 
 	/**
-	 * Query image IDs by mode and pagination.
+	 * Query image IDs by mode, category, and pagination.
 	 *
 	 * @param string $mode       Processing mode: missing|review|regenerate.
+	 * @param int    $cat_id     Category ID.
 	 * @param int    $offset     Query offset.
 	 * @param int    $batch_size Number of IDs to fetch.
 	 * @return array{ids: int[], total: int}
 	 */
-	public function get_image_ids( $mode, $offset, $batch_size ) {
+	public function get_image_ids( $mode, $cat_id, $offset, $batch_size ) {
 		$args = array(
 			'post_type'        => 'attachment',
 			'post_mime_type'   => 'image',
@@ -102,11 +103,21 @@ class AutoAlt_Processor {
 			'orderby'          => 'ID',
 			'order'            => 'ASC',
 			'no_found_rows'    => false,
-			'suppress_filters' => true, // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters
+			'suppress_filters' => true,
 		);
 
+		if ( ! empty( $cat_id ) ) {
+			$args['tax_query'] = array(
+				array(
+					'taxonomy' => 'category',
+					'field'    => 'term_id',
+					'terms'    => (int) $cat_id,
+				),
+			);
+		}
+
 		if ( 'missing' === $mode ) {
-			$args['meta_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			$args['meta_query'] = array(
 				'relation' => 'OR',
 				array(
 					'key'     => '_wp_attachment_image_alt',

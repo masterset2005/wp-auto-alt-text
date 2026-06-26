@@ -3,12 +3,18 @@
 	if (!data || !data.mode) return;
 
 	var mode = data.mode;
+	var catId = $('#autoalt-cat-filter').val() || 0;
 	var batchSize = data.batchSize || 5;
 	var total = 0;
 	var done = 0;
 	var offset = 0;
 	var results = [];
 	var running = true;
+
+	// Update catId if changed
+	$(document).on('change', '#autoalt-cat-filter', function() {
+		catId = $(this).val();
+	});
 
 	function getActionLabel() {
 		if (mode === 'missing') return 'Fill Missing';
@@ -274,8 +280,7 @@
 				action: 'autoalt_get_ids',
 				nonce: data.nonce,
 				mode: mode,
-				offset: offset,
-				batch: batchSize,
+				catId: catId,
 			},
 			success: function (response) {
 				if (!running) return;

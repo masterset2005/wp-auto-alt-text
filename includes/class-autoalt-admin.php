@@ -214,6 +214,16 @@ class AutoAlt_Admin {
 					&middot;
 					<strong><?php echo esc_html( $stats['total'] ); ?></strong>
 					<?php esc_html_e( 'total images', 'auto-alt-text-generator' ); ?>
+					&middot;
+					<select id="autoalt-cat-filter" style="margin-left:8px;">
+						<option value="0"><?php esc_html_e( 'All Categories', 'auto-alt-text-generator' ); ?></option>
+						<?php
+						$categories = get_categories();
+						foreach ( $categories as $cat ) {
+							printf( '<option value="%d">%s</option>', esc_attr( $cat->term_id ), esc_html( $cat->name ) );
+						}
+						?>
+					</select>
 				</p>
 				<?php if ( (int) $stats['missing'] ) : ?>
 					<a href="admin.php?page=autoalt-processing&autoalt_action=missing" class="button button-primary">
@@ -423,6 +433,15 @@ class AutoAlt_Admin {
 			<form method="post" action="options.php">
 				<?php settings_fields( 'autoalt_settings' ); ?>
 				<table class="form-table">
+					<tr>
+						<th scope="row">
+							<label for="autoalt_debug_mode"><?php esc_html_e( 'Enable Debug Mode', 'auto-alt-text-generator' ); ?></label>
+						</th>
+						<td>
+							<input type="checkbox" id="autoalt_debug_mode" name="autoalt_debug_mode" value="1" <?php checked( get_option( 'autoalt_debug_mode', '0' ), '1' ); ?>>
+							<label for="autoalt_debug_mode"><?php esc_html_e( 'Show AI reasoning in processing logs.', 'auto-alt-text-generator' ); ?></label>
+						</td>
+					</tr>
 					<tr>
 						<th scope="row">
 							<label for="autoalt_batch_size"><?php esc_html_e( 'Batch Size', 'auto-alt-text-generator' ); ?></label>
@@ -664,11 +683,12 @@ class AutoAlt_Admin {
 		}
 
 		$mode   = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : 'missing';
+		$cat_id = isset( $_POST['catId'] ) ? absint( $_POST['catId'] ) : 0;
 		$offset = isset( $_POST['offset'] ) ? absint( $_POST['offset'] ) : 0;
 		$batch  = isset( $_POST['batch'] ) ? absint( $_POST['batch'] ) : 5;
 
 		$processor = AutoAlt_Processor::init();
-		$result    = $processor->get_image_ids( $mode, $offset, $batch );
+		$result    = $processor->get_image_ids( $mode, $cat_id, $offset, $batch );
 
 		wp_send_json_success( $result );
 	}
