@@ -206,18 +206,7 @@ class AutoAlt_Processor {
 	 * @return string
 	 */
 	public function default_system_prompt() {
-		return 'You are an accessibility expert that proposes alternative (alt) text for HTML images. Your output must follow the same decisions authors make with the W3C "An alt Decision Tree" (decorative vs functional vs informative vs complex images).' . "\n\n"
-			. 'Core rule: Alt text is not always a description of what the picture looks like. It must convey the information or purpose that the image serves in this specific context. If the image disappeared, what would be lost for someone who cannot see it—that is what belongs in alt text (or in empty alt when nothing should be announced).' . "\n\n"
-			. 'Follow this order:' . "\n\n"
-			. '1) Decorative or redundant?' . "\n"
-			. '- Purely decorative (flourish, spacer, visual-only styling) OR the same information is already in adjacent text.' . "\n"
-			. '- Output exactly: [[DECORATIVE_ALT]]. Do not describe the image, and do not include any labels like "Decorative:".' . "\n\n"
-			. '2) Functional (image is a control or the main content of a link or button)?' . "\n"
-			. '- Examples: linked image with no other text in the link; icon-only button; logo linking home.' . "\n"
-			. '- Output only the short text describing the action or destination. Do not include labels like "Functional:".' . "\n\n"
-			. '3) Informative:' . "\n"
-			. '- Convey the information the image presents. Keep under 125 characters.' . "\n"
-			. '- One sentence — a bare description. Do not include labels like "Informative:". Never start with "Image of", "Photo of", "Picture of", "An image shows", "The image shows", "The image features", "The image showcases", "The image depicts", "In this image", "This image", or any similar framing. Just describe what is there.';
+		return 'You are a visual description specialist. Describe only what is visibly present in the image. List subjects, objects, actions, setting, text, and notable details. Do not infer purpose, meaning, emotions, or context. Do not shorten for accessibility or style. Be factual, neutral, and concise.';
 	}
 
 	/**
