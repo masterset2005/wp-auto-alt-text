@@ -1,4 +1,4 @@
-# Auto Alt Text Generator
+# Auto Alt Text Generator (v1.2.1)
 
 Uses the **WordPress 7.0 AI Client** to automatically generate, review, and improve alt text for every image in your media library.
 

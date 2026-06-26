@@ -4,7 +4,7 @@ Tags: alt text, accessibility, images, media library, AI
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -115,6 +115,11 @@ Supported providers include Anthropic (Claude), Google (Gemini), and OpenAI (GPT
 
 == Changelog ==
 
+= 1.2.1 =
+* Fixed PHPStan level-max errors and improved type safety.
+* Improved prompt engineering to explicitly forbid category labels (Informative, Decorative, Functional).
+* Added regex cleanup to forcefully strip any accidental category labels from alt text output.
+
 = 1.2.0 =
 * Added WP-CLI command (`wp auto-alt process --mode=missing|review|regenerate`) with progress bar and batch cache flushing.
 * Added background processing via WP-Cron: "Process in Background" buttons on the processing page, scheduled batch events, and a progress bar with cancel support.
@@ -148,6 +153,9 @@ Supported providers include Anthropic (Claude), Google (Gemini), and OpenAI (GPT
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.2.1 =
+Version 1.2.1 contains minor fixes for prompt instruction following and PHPStan type safety.
 
 = 1.2.0 =
 Version 1.2.0 adds WP-CLI support, background WP-Cron processing, and a separate Comparison Prompt setting. The settings page has moved from Media to its own page under **Settings > Auto Alt Text**. Internal file names have changed — no action needed on your part.
