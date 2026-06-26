@@ -93,10 +93,13 @@ class AutoAlt_Processor {
 			return $this->result( $attachment_id, $title, 'error', null, __( 'AI generation failed.', 'auto-alt-text' ) );
 		}
 
-		$alt_text = trim( $alt_text );
+		$alt_text = sanitize_text_field( $alt_text );
+		if ( strlen( $alt_text ) > 125 ) {
+			$alt_text = substr( $alt_text, 0, 125 );
+		}
 		$changed  = $alt_text !== $current_alt;
 
-		update_post_meta( $attachment_id, '_wp_attachment_image_alt', sanitize_text_field( $alt_text ) );
+		update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt_text );
 
 		return array(
 			'id'        => $attachment_id,
@@ -108,27 +111,35 @@ class AutoAlt_Processor {
 		);
 	}
 
+	public function default_system_prompt() {
+		return 'You are an alt text generator for website images.' . "\n\n"
+			. 'Rules:' . "\n"
+			. '- Output MUST be under 125 characters.' . "\n"
+			. '- Describe only objective visual elements.' . "\n"
+			. '- Never use "Image of", "Photo of", or speculative language.' . "\n"
+			. '- If the image is decorative, return an empty string.' . "\n\n"
+			. 'Examples:' . "\n"
+			. 'Good: Smiling baby in a patterned dress pointing at the camera.' . "\n"
+			. 'Bad: The image features a beautiful close-up shot of a happy baby that evokes warm feelings.' . "\n"
+			. 'Good: Three-tier wedding cake with white frosting and fresh flowers on top.' . "\n"
+			. 'Bad: This is a stunning picture of a delicious-looking cake with beautiful floral decorations.' . "\n"
+			. 'Good: (empty)' . "\n"
+			. 'Bad: A beautiful abstract background pattern with flowing colors.';
+	}
+
 	private function build_prompt( $mode, $current_alt ) {
+		$custom = get_option( 'autoalt_system_prompt', '' );
+		if ( ! empty( trim( $custom ) ) ) {
+			$system = $custom;
+		} else {
+			$system = $this->default_system_prompt();
+		}
+
 		if ( 'review' === $mode && ! empty( $current_alt ) ) {
 			$prompt  = "Review the alt text for this image and improve it if necessary.\n";
 			$prompt .= "Current alt text: \"{$current_alt}\"";
-
-			$system  = 'You are an accessibility expert reviewing alt text for website images. ';
-			$system .= 'Evaluate the provided alt text against the image. ';
-			$system .= 'If the existing alt text is accurate, descriptive, and follows best practices (under 125 chars, no "Image of" prefix, describes visible content), return it exactly as-is without any changes. ';
-			$system .= 'If it is missing, empty, generic (like "image", "photo", "picture", "img"), or does not accurately describe the visible content, generate a better alternative. ';
-			$system .= 'Keep it under 125 characters. Describe only what is visible. ';
-			$system .= 'Do not start with "Image of", "Photo of", or "Picture of". ';
-			$system .= 'If the image appears to be decorative, return an empty string. ';
-			$system .= 'Return plain text only.';
 		} else {
 			$prompt = 'Generate concise, descriptive alt text for this image.';
-
-			$system  = 'You are an accessibility expert generating alt text for website images. ';
-			$system .= 'Keep it under 125 characters. Describe only what is visible. ';
-			$system .= 'Do not start with "Image of", "Photo of", or "Picture of". ';
-			$system .= 'If the image appears to be decorative (pure background, spacer, or empty), ';
-			$system .= 'return an empty string. Return plain text only.';
 		}
 
 		return array( $prompt, $system );

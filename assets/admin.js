@@ -18,12 +18,39 @@
 
 	var $notice = $(
 		'<div class="notice notice-info is-dismissible">' +
-			'<p><strong>Auto Alt Text:</strong> ' + getActionLabel() + ' — starting...</p>' +
+			'<p><strong>Auto Alt Text:</strong> ' + getActionLabel() + ' — starting... <a href="#" class="autoalt-stop-link" style="color:#d63638;">stop</a></p>' +
 			'<div class="autoalt-results" style="margin:8px 0 4px;max-height:320px;overflow-y:auto;font-family:monospace;font-size:12px;line-height:1.5;"></div>' +
 		'</div>'
 	).insertAfter('.wp-header-end');
 
 	var $results = $notice.find('.autoalt-results');
+
+	function stop(manual) {
+		if (!running) return;
+		running = false;
+		if (manual) {
+			var ok = 0, errs = 0;
+			results.forEach(function (r) {
+				if (r.status === 'success') ok++;
+				else if (r.status === 'error') errs++;
+			});
+			var summary = 'Stopped. ' + done + ' of ' + total + ' processed (' + ok + ' ok';
+			if (errs > 0) summary += ', ' + errs + ' errors';
+			summary += ')';
+			$notice.find('p').html('<strong>Auto Alt Text:</strong> ' + summary);
+			$notice.removeClass('notice-info').addClass('notice-warning');
+		}
+		cleanUrl();
+	}
+
+	$notice.on('click', '.notice-dismiss', function () {
+		stop(true);
+	});
+
+	$notice.on('click', '.autoalt-stop-link', function (e) {
+		e.preventDefault();
+		stop(true);
+	});
 
 	function addEntry(r) {
 		var $entry = $('<div style="padding:3px 6px;margin:1px 0;border-radius:2px;">');
@@ -70,7 +97,7 @@
 	}
 
 	function processId(id, cb) {
-		$notice.find('p').html('<strong>Auto Alt Text:</strong> ' + getActionLabel() + ' — ' + (done + 1) + ' / ' + total + '...');
+		$notice.find('p').html('<strong>Auto Alt Text:</strong> ' + getActionLabel() + ' — ' + (done + 1) + ' / ' + total + '... <a href="#" class="autoalt-stop-link" style="color:#d63638;">stop</a>');
 
 		$.ajax({
 			url: data.ajaxUrl,
@@ -82,11 +109,13 @@
 				mode: mode,
 			},
 			success: function (response) {
+				if (!running) return;
 				var r = response.data;
 				results.push(r);
 				addEntry(r);
 			},
 			error: function () {
+				if (!running) return;
 				results.push({ id: id, status: 'error' });
 				addEntry({ id: id, title: '', status: 'error', error: 'Request failed' });
 			},
@@ -145,11 +174,13 @@
 				}
 
 				processBatch(ids, function () {
+					if (!running) return;
 					offset += ids.length;
 					setTimeout(fetchBatch, 100);
 				});
 			},
 			error: function () {
+				if (!running) return;
 				running = false;
 				$notice.find('p').html('<strong>Auto Alt Text:</strong> Failed to fetch image list.');
 				$notice.removeClass('notice-info').addClass('notice-error');
