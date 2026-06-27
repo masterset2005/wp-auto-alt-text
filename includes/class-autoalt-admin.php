@@ -561,12 +561,12 @@ class AutoAlt_Admin {
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="autoalt_excerpt_limit"><?php esc_html_e( 'Excerpt Limit', 'auto-alt-text-generator' ); ?>
+							<label for="autoalt_excerpt_limit"><?php esc_html_e( 'Content Limit', 'auto-alt-text-generator' ); ?>
 						</th>
 						<td>
 							<input type="number" id="autoalt_excerpt_limit" name="autoalt_excerpt_limit" value="<?php echo esc_attr( get_option( 'autoalt_excerpt_limit', 500 ) ); ?>" min="0" max="5000" step="100" style="width:120px;">
 							<p class="description">
-								<?php esc_html_e( 'Maximum characters of the parent post excerpt sent to the AI. Higher values give more context but increase token usage and processing time. Set to 0 to disable excerpt context entirely.', 'auto-alt-text-generator' ); ?>
+								<?php esc_html_e( 'Maximum characters of the parent post body content sent to the AI. Higher values give more context but increase token usage and processing time. Set to 0 to disable article context entirely.', 'auto-alt-text-generator' ); ?>
 							</p>
 						</td>
 					</tr>
@@ -652,7 +652,7 @@ class AutoAlt_Admin {
 {caption}         - Image caption (post_excerpt)
 {title}           - Image title (post_title)
 {article_title}   - Parent post title
-{article_excerpt} - Parent post excerpt (first <?php echo absint( get_option( 'autoalt_excerpt_limit', 500 ) ); ?> chars)
+{article_content} - Parent post body content (first <?php echo absint( get_option( 'autoalt_excerpt_limit', 500 ) ); ?> chars; also available as {article_excerpt} for legacy prompts)
 {existing_alt}    - Current alt text in database
 								</pre>
 							</details>
@@ -686,7 +686,7 @@ Available context variables for your custom prompt:
 {caption}         - Image caption (post_excerpt)
 {title}           - Image title (post_title)
 {article_title}   - Parent post title
-{article_excerpt} - Parent post excerpt (first 1000 chars)
+{article_content} - Parent post body content (first 1000 chars; also available as {article_excerpt} for legacy prompts)
 {existing_alt}    - Current alt text in database
 {visual_desc}     - Raw output from Vision model
 
@@ -724,7 +724,7 @@ Available context variables for your custom prompt:
 {caption}         - Image caption (post_excerpt)
 {title}           - Image title (post_title)
 {article_title}   - Parent post title
-{article_excerpt} - Parent post excerpt (first <?php echo absint( get_option( 'autoalt_excerpt_limit', 500 ) ); ?> chars)
+{article_content} - Parent post body content (first <?php echo absint( get_option( 'autoalt_excerpt_limit', 500 ) ); ?> chars; also available as {article_excerpt} for legacy prompts)
 {existing_alt}    - Current alt text in database
 {visual_desc}     - Raw output from Vision model
 

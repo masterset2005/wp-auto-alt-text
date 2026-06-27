@@ -322,7 +322,7 @@ class AutoAlt_Processor {
 			. '**Caption:** {caption}' . "\n"
 			. '**Post:** {title}' . "\n"
 			. '**Article:** {article_title}' . "\n"
-			. '**Excerpt:** {article_excerpt}' . "\n"
+			. '**Content:** {article_content}' . "\n"
 			. '**Current alt:** {existing_alt}' . "\n\n"
 			. 'Output a single clean string. When uncertain, use `[[DECORATIVE_ALT]]`.';
 	}
@@ -342,8 +342,8 @@ class AutoAlt_Processor {
 		}
 
 		$system = str_replace(
-			array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{existing_alt}', '{visual_desc}' ),
-			array( $context['caption'], $context['title'], $context['article_title'], $context['article_excerpt'], $context['existing_alt'], '' ),
+			array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}' ),
+			array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], '' ),
 			$system
 		);
 
@@ -419,10 +419,10 @@ class AutoAlt_Processor {
 	}
 
 	/**
-	 * Gather context for an attachment: caption, post title, excerpt.
+	 * Gather context for an attachment: caption, post title, content.
 	 *
 	 * @param int $attachment_id Attachment ID.
-	 * @return array{caption: string, title: string, article_title: string, article_excerpt: string, existing_alt: string}
+	 * @return array{caption: string, title: string, article_title: string, article_content: string, existing_alt: string}
 	 */
 	private function get_attachment_context( $attachment_id ) {
 		$post = get_post( $attachment_id );
@@ -431,7 +431,7 @@ class AutoAlt_Processor {
 			'caption'         => $this->sanitize_input( $post ? (string) $post->post_excerpt : '' ),
 			'title'           => $this->sanitize_input( $post ? (string) $post->post_title : '' ),
 			'article_title'   => '',
-			'article_excerpt' => '',
+			'article_content' => '',
 			'existing_alt'    => $this->sanitize_input( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ),
 		);
 
@@ -439,8 +439,7 @@ class AutoAlt_Processor {
 			$parent = get_post( $parent_id );
 			if ( $parent ) {
 				$context['article_title']   = $this->sanitize_input( $parent->post_title );
-				// Limit excerpt to ~1000 characters to stay safe within 1-3B model context limits
-				$context['article_excerpt'] = $this->sanitize_input( mb_substr( wp_strip_all_tags( $parent->post_content ), 0, absint( get_option( 'autoalt_excerpt_limit', 500 ) ) ) );
+				$context['article_content'] = $this->sanitize_input( mb_substr( wp_strip_all_tags( $parent->post_content ), 0, absint( get_option( 'autoalt_excerpt_limit', 500 ) ) ) );
 			}
 		}
 		return $context;
@@ -477,8 +476,8 @@ class AutoAlt_Processor {
 			$system = $custom;
 			// Replace user placeholders with actual context values
 			$system = str_replace(
-				array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{existing_alt}', '{visual_desc}' ),
-				array( $context['caption'], $context['title'], $context['article_title'], $context['article_excerpt'], $context['existing_alt'], $new_alt ),
+				array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{article_content}', '{existing_alt}', '{visual_desc}' ),
+				array( $context['caption'], $context['title'], $context['article_title'], $context['article_content'], $context['article_content'], $context['existing_alt'], $new_alt ),
 				$system
 			);
 		} else {
@@ -486,9 +485,9 @@ class AutoAlt_Processor {
 		}
 
 		$prompt = "**Caption:** " . $context['caption'] . "\n" .
-		          "**Post:** " . $context['title'] . "\n" .
+		          "**Title:** " . $context['title'] . "\n" .
 		          "**Article:** " . $context['article_title'] . "\n" .
-		          "**Excerpt:** " . $context['article_excerpt'] . "\n" .
+		          "**Content:** " . $context['article_content'] . "\n" .
 		          "**Current alt:** " . $context['existing_alt'] . "\n\n" .
 		          "**Vision:** " . $new_alt;
 
