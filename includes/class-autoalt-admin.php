@@ -388,6 +388,16 @@ class AutoAlt_Admin {
 
 		register_setting(
 			'autoalt_settings',
+			'autoalt_excerpt_limit',
+			array(
+				'type'              => 'integer',
+				'sanitize_callback' => array( $this, 'sanitize_excerpt_limit' ),
+				'default'           => 500,
+			)
+		);
+
+		register_setting(
+			'autoalt_settings',
 			'autoalt_system_prompt',
 			array(
 				'type'              => 'string',
@@ -456,6 +466,23 @@ class AutoAlt_Admin {
 	}
 
 	/**
+	 * Sanitize excerpt limit (clamp 0–5000, 0 = disabled).
+	 *
+	 * @param mixed $value Raw input.
+	 * @return int
+	 */
+	public function sanitize_excerpt_limit( $value ) {
+		$value = absint( $value );
+		if ( $value < 0 ) {
+			$value = 0;
+		}
+		if ( $value > 5000 ) {
+			$value = 5000;
+		}
+		return $value;
+	}
+
+	/**
 	 * Render the settings page.
 	 *
 	 * @return void
@@ -501,6 +528,17 @@ class AutoAlt_Admin {
 					</tr>
 					<tr>
 						<th scope="row">
+							<label for="autoalt_excerpt_limit"><?php esc_html_e( 'Excerpt Limit', 'auto-alt-text-generator' ); ?>
+						</th>
+						<td>
+							<input type="number" id="autoalt_excerpt_limit" name="autoalt_excerpt_limit" value="<?php echo esc_attr( get_option( 'autoalt_excerpt_limit', 500 ) ); ?>" min="0" max="5000" step="100" style="width:120px;">
+							<p class="description">
+								<?php esc_html_e( 'Maximum characters of the parent post excerpt sent to the AI. Higher values give more context but increase token usage and processing time. Set to 0 to disable excerpt context entirely.', 'auto-alt-text-generator' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
 							<?php esc_html_e( 'Processing Mode', 'auto-alt-text-generator' ); ?>
 						</th>
 						<td>
@@ -537,7 +575,7 @@ class AutoAlt_Admin {
 {caption}         - Image caption (post_excerpt)
 {title}           - Image title (post_title)
 {article_title}   - Parent post title
-{article_excerpt} - Parent post excerpt (first 500 chars)
+{article_excerpt} - Parent post excerpt (first <?php echo absint( get_option( 'autoalt_excerpt_limit', 500 ) ); ?> chars)
 {existing_alt}    - Current alt text in database
 								</pre>
 							</details>
@@ -609,7 +647,7 @@ Available context variables for your custom prompt:
 {caption}         - Image caption (post_excerpt)
 {title}           - Image title (post_title)
 {article_title}   - Parent post title
-{article_excerpt} - Parent post excerpt (first 500 chars)
+{article_excerpt} - Parent post excerpt (first <?php echo absint( get_option( 'autoalt_excerpt_limit', 500 ) ); ?> chars)
 {existing_alt}    - Current alt text in database
 {visual_desc}     - Raw output from Vision model
 

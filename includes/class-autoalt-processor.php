@@ -397,7 +397,7 @@ class AutoAlt_Processor {
 			if ( $parent ) {
 				$context['article_title']   = $this->sanitize_input( $parent->post_title );
 				// Limit excerpt to ~1000 characters to stay safe within 1-3B model context limits
-				$context['article_excerpt'] = $this->sanitize_input( mb_substr( wp_strip_all_tags( $parent->post_content ), 0, 500 ) );
+				$context['article_excerpt'] = $this->sanitize_input( mb_substr( wp_strip_all_tags( $parent->post_content ), 0, absint( get_option( 'autoalt_excerpt_limit', 500 ) ) ) );
 			}
 		}
 		return $context;
