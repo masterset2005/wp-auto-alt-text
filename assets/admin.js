@@ -281,6 +281,8 @@
 				nonce: data.nonce,
 				mode: mode,
 				catId: catId,
+				offset: offset,
+				batch: batchSize,
 			},
 			success: function (response) {
 				if (!running) return;
