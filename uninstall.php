@@ -22,6 +22,8 @@ $autoalt_options = array(
 	'autoalt_processing_mode',
 	'autoalt_single_prompt',
 	'autoalt_excerpt_limit',
+	'autoalt_vision_model',
+	'autoalt_text_model',
 );
 
 foreach ( $autoalt_options as $autoalt_option ) {

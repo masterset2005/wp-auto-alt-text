@@ -398,6 +398,26 @@ class AutoAlt_Admin {
 
 		register_setting(
 			'autoalt_settings',
+			'autoalt_vision_model',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_model_preference' ),
+				'default'           => '',
+			)
+		);
+
+		register_setting(
+			'autoalt_settings',
+			'autoalt_text_model',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_model_preference' ),
+				'default'           => '',
+			)
+		);
+
+		register_setting(
+			'autoalt_settings',
 			'autoalt_system_prompt',
 			array(
 				'type'              => 'string',
@@ -483,6 +503,18 @@ class AutoAlt_Admin {
 	}
 
 	/**
+	 * Sanitize model preference: strip unsafe chars, keep letters, numbers, : . - _ / ,.
+	 *
+	 * @param string $value Raw input.
+	 * @return string
+	 */
+	public function sanitize_model_preference( $value ) {
+		$value = preg_replace( '/[^a-zA-Z0-9:.\-_\/,]/', '', $value );
+		$value = trim( $value );
+		return $value;
+	}
+
+	/**
 	 * Render the settings page.
 	 *
 	 * @return void
@@ -554,6 +586,28 @@ class AutoAlt_Admin {
 									&mdash; <?php esc_html_e( 'Vision Agent observes, then Synthesizer formats. Designed for small local models (1-3B params).', 'auto-alt-text-generator' ); ?>
 								</label>
 							</fieldset>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="autoalt_vision_model"><?php esc_html_e( 'Vision Model Preference', 'auto-alt-text-generator' ); ?></label>
+						</th>
+						<td>
+							<input type="text" id="autoalt_vision_model" name="autoalt_vision_model" value="<?php echo esc_attr( get_option( 'autoalt_vision_model', '' ) ); ?>" class="regular-text code" placeholder="e.g. gemma4:e2b, llava, moondream">
+							<p class="description">
+								<?php esc_html_e( 'Preferred model(s) for image analysis (vision calls). Comma-separated for fallback order. The AI Client uses the first available model from this list. Leave empty to use the default.', 'auto-alt-text-generator' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="autoalt_text_model"><?php esc_html_e( 'Text Model Preference', 'auto-alt-text-generator' ); ?></label>
+						</th>
+						<td>
+							<input type="text" id="autoalt_text_model" name="autoalt_text_model" value="<?php echo esc_attr( get_option( 'autoalt_text_model', '' ) ); ?>" class="regular-text code" placeholder="e.g. gemma4:e2b, qwen2.5:7b">
+							<p class="description">
+								<?php esc_html_e( 'Preferred model(s) for text-only processing (Synthesizer in Two-Pass mode). Comma-separated for fallback order. Leave empty to use the default.', 'auto-alt-text-generator' ); ?>
+							</p>
 						</td>
 					</tr>
 					<tr data-mode="single-pass">

@@ -139,6 +139,32 @@ class AutoAlt_Processor {
 	}
 
 	/**
+	 * Get vision model preference from settings as an array.
+	 *
+	 * @return string[]
+	 */
+	private function get_vision_model_preference() {
+		$models = get_option( 'autoalt_vision_model', '' );
+		if ( '' === trim( $models ) ) {
+			return array();
+		}
+		return array_map( 'trim', explode( ',', $models ) );
+	}
+
+	/**
+	 * Get text model preference from settings as an array.
+	 *
+	 * @return string[]
+	 */
+	private function get_text_model_preference() {
+		$models = get_option( 'autoalt_text_model', '' );
+		if ( '' === trim( $models ) ) {
+			return array();
+		}
+		return array_map( 'trim', explode( ',', $models ) );
+	}
+
+	/**
 	 * Process a single attachment: generate alt text via AI.
 	 *
 	 * @param int    $attachment_id Attachment post ID.
@@ -179,10 +205,16 @@ class AutoAlt_Processor {
 		if ( 'single-pass' === $mode ) {
 			// Single call: vision model receives full instructions + context + image.
 			list( $system, $prompt ) = $this->build_single_prompt( $context );
-			$alt_text = wp_ai_client_prompt( $prompt )
+			$builder = wp_ai_client_prompt( $prompt )
 				->using_system_instruction( $system )
-				->with_file( $file, $mime )
-				->generate_text();
+				->with_file( $file, $mime );
+
+			$vision_models = $this->get_vision_model_preference();
+			if ( ! empty( $vision_models ) ) {
+				$builder = $builder->using_model_preference( ...$vision_models );
+			}
+
+			$alt_text = $builder->generate_text();
 
 			if ( is_wp_error( $alt_text ) ) {
 				/* translators: %s: AI provider error message */
@@ -191,10 +223,16 @@ class AutoAlt_Processor {
 		} else {
 			// Two-pass: Vision → Synthesizer.
 			list( $prompt, $system ) = $this->build_prompt();
-			$alt_text = wp_ai_client_prompt( $prompt )
+			$builder = wp_ai_client_prompt( $prompt )
 				->using_system_instruction( $system )
-				->with_file( $file, $mime )
-				->generate_text();
+				->with_file( $file, $mime );
+
+			$vision_models = $this->get_vision_model_preference();
+			if ( ! empty( $vision_models ) ) {
+				$builder = $builder->using_model_preference( ...$vision_models );
+			}
+
+			$alt_text = $builder->generate_text();
 
 			if ( is_wp_error( $alt_text ) ) {
 				/* translators: %s: AI provider error message */
@@ -460,9 +498,15 @@ class AutoAlt_Processor {
 			error_log( 'PROMPT: ' . $prompt );
 		}
 
-		$result = wp_ai_client_prompt( $prompt )
-			->using_system_instruction( $system )
-			->generate_text();
+		$builder = wp_ai_client_prompt( $prompt )
+			->using_system_instruction( $system );
+
+		$text_models = $this->get_text_model_preference();
+		if ( ! empty( $text_models ) ) {
+			$builder = $builder->using_model_preference( ...$text_models );
+		}
+
+		$result = $builder->generate_text();
 
 		if ( is_wp_error( $result ) ) {
 			return $new_alt;
