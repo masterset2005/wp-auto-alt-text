@@ -4,7 +4,7 @@ Tags: alt text, accessibility, images, media library, AI
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -115,6 +115,11 @@ Supported providers include Anthropic (Claude), Google (Gemini), and OpenAI (GPT
 
 == Changelog ==
 
+= 1.4.0 =
+* Vision and Text Model Preference fields converted to dropdowns populated live from configured AI providers via AJAX.
+* Added autoalt_get_models AJAX endpoint that lists available models through the ProviderRegistry API.
+* Falls back to text input if the AI Client is unavailable or the AJAX call fails.
+
 = 1.3.0 =
 * Added single-pass/two-pass processing mode setting — high-end models use one AI call; small models split vision + synthesizer.
 * Added Excerpt Limit setting to control parent post excerpt length sent to the AI (default 500, range 0–5000).
@@ -177,6 +182,9 @@ Supported providers include Anthropic (Claude), Google (Gemini), and OpenAI (GPT
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.4.0 =
+Version 1.4.0 converts the Vision and Text Model Preference fields from text inputs to live dropdowns populated from your configured AI providers. Previously saved comma-separated model lists are preserved in the dropdown display. No action needed on upgrade.
 
 = 1.3.0 =
 Version 1.3.0 adds a dual-mode processing system: Single-Pass for high-end models and the existing Two-Pass split for small models. Also adds an Excerpt Limit setting and restores the W3C Alt Decision Tree in the single-pass default prompt. Clears any saved custom prompts on upgrade — please re-save if needed.
