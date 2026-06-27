@@ -185,6 +185,7 @@ class AutoAlt_Processor {
 				->generate_text();
 
 			if ( is_wp_error( $alt_text ) ) {
+				/* translators: %s: AI provider error message */
 				return $this->result( $attachment_id, $title, 'error', null, sprintf( __( 'AI generation failed: %s', 'auto-alt-text-generator' ), $alt_text->get_error_message() ) );
 			}
 		} else {
@@ -196,6 +197,7 @@ class AutoAlt_Processor {
 				->generate_text();
 
 			if ( is_wp_error( $alt_text ) ) {
+				/* translators: %s: AI provider error message */
 				return $this->result( $attachment_id, $title, 'error', null, sprintf( __( 'AI generation failed: %s', 'auto-alt-text-generator' ), $alt_text->get_error_message() ) );
 			}
 

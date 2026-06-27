@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<ruleset name="Auto-Alt-Text">
+	<description>PHPCS rules for Auto Alt Text Generator</description>
+
+	<file>.</file>
+
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>.gitignore</exclude-pattern>
+	<exclude-pattern>languages/.gitkeep</exclude-pattern>
+
+	<rule ref="WordPress">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="auto-alt-text-generator"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="WordPress.PHP.DevelopmentFunctions.error_log_error_log">
+		<severity>0</severity>
+	</rule>
+
+	<rule ref="WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters">
+		<severity>0</severity>
+	</rule>
+</ruleset>
