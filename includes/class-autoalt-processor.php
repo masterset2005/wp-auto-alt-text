@@ -172,6 +172,10 @@ class AutoAlt_Processor {
 
 		$mode = get_option( 'autoalt_processing_mode', 'two-pass' );
 
+		if ( '1' === get_option( 'autoalt_debug_mode', '0' ) ) {
+			error_log( '--- AUTOALT MODE DEBUG --- Processing mode: ' . $mode . ' for attachment #' . $attachment_id );
+		}
+
 		if ( 'single-pass' === $mode ) {
 			// Single call: vision model receives full instructions + context + image.
 			list( $system, $prompt ) = $this->build_single_prompt( $context );

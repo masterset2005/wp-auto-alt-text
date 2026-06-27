@@ -370,8 +370,9 @@ class AutoAlt_Admin {
 			'autoalt_settings',
 			'autoalt_processing_mode',
 			array(
-				'type'    => 'string',
-				'default' => 'two-pass',
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_processing_mode' ),
+				'default'           => 'two-pass',
 			)
 		);
 
@@ -437,6 +438,19 @@ class AutoAlt_Admin {
 		}
 		if ( $value > 50 ) {
 			$value = 50;
+		}
+		return $value;
+	}
+
+	/**
+	 * Sanitize processing mode: must be single-pass or two-pass.
+	 *
+	 * @param string $value Raw input.
+	 * @return string
+	 */
+	public function sanitize_processing_mode( $value ) {
+		if ( ! in_array( $value, array( 'single-pass', 'two-pass' ), true ) ) {
+			return 'two-pass';
 		}
 		return $value;
 	}
