@@ -645,23 +645,22 @@ Example: "Context: {article_title}. Visual: {visual_desc}"
 				<?php submit_button(); ?>
 			</form>
 		</div>
-	<script>
-	jQuery(function($) {
-		function autoalt_toggle_mode() {
-			var mode = $('input[name="autoalt_processing_mode"]:checked').val();
-			$('tr[data-mode]').hide();
-			$('tr[data-mode="' + mode + '"]').show();
-		}
-		$('input[name="autoalt_processing_mode"]').on('change', autoalt_toggle_mode);
-		autoalt_toggle_mode();
-	});
-	</script>
-	<style id="autoalt-responsive-form"></style>
-	<script>(document).ready(function() { $('.wrap .form-table td[scope=row]').css('max-height', '50vh'); $('.wrap .form-table th[rowscope]').css('max-height', '48vh'); });</script>
-
-	</div>
-	<?php
-}
+		<script>
+		( function( $ ) {
+			function autoalt_toggle_mode() {
+				var mode = $( 'input[name="autoalt_processing_mode"]:checked' ).val();
+				$( 'tr[data-mode]' ).addClass( 'hidden' );
+				$( 'tr[data-mode="' + mode + '"]' ).removeClass( 'hidden' );
+			}
+			$( 'input[name="autoalt_processing_mode"]' ).on( 'change', autoalt_toggle_mode );
+			autoalt_toggle_mode();
+		} )( jQuery );
+		</script>
+		<style>
+		tr[data-mode].hidden { display: none; }
+		</style>
+		<?php
+	}
 
 /**
  * Mark auto-generated attachments with a flag for JS consumption.
