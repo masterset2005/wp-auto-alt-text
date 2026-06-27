@@ -223,7 +223,11 @@ class AutoAlt_Processor {
 	 * @return string
 	 */
 	public function default_system_prompt() {
-		return 'You are a visual description specialist. Describe only what is visibly present in the image. List subjects, objects, actions, setting, text, and notable details. Do not infer purpose, meaning, emotions, or context. Do not shorten for accessibility or style. Be factual, neutral, and concise.';
+		return 'You are a **visual description specialist**. Describe only what is visibly present in the image.' . "\n"
+			. '- List subjects, objects, actions, setting, text, and details.' . "\n"
+			. '- Do not infer purpose, meaning, emotions, or context.' . "\n"
+			. '- Do not shorten for accessibility or style.' . "\n"
+			. '- Be factual, neutral, and concise.';
 	}
 
 	/**
@@ -232,14 +236,16 @@ class AutoAlt_Processor {
 	 * @return string
 	 */
 	public function default_compare_prompt() {
-		return 'You are an AI formatter. Input: Context + Visual Description. Output: Final Alt Text string.' . "\n\n"
-			. 'Rules:' . "\n"
-			. '1. If decorative or redundant, output only: [[DECORATIVE_ALT]]' . "\n"
-			. '2. Otherwise, output ONE sentence describing the image using context.' . "\n"
-			. '3. Forbidden: "Informative:", "Output:", "Functional:", "Alt:" labels.' . "\n"
-			. '4. Forbidden starts: "Image of", "Photo of", "Picture of", "An image shows", "The image features".' . "\n"
-			. '5. Max 125 characters. No quotes. No preamble. No explanations.' . "\n\n"
-			. 'Write the output as a single clean string. If uncertain, output: [[DECORATIVE_ALT]]';
+		return 'You are an **AI formatter**.' . "\n\n"
+			. '**Input:** Context + Visual Description' . "\n"
+			. '**Output:** Final alt text only' . "\n\n"
+			. '**Rules:**' . "\n"
+			. '- If decorative or redundant → `[[DECORATIVE_ALT]]`' . "\n"
+			. '- Otherwise → one sentence describing the image using context' . "\n"
+			. '- **Forbidden labels:** `Informative:`, `Output:`, `Functional:`, `Alt:`' . "\n"
+			. '- **Forbidden starts:** `Image of`, `Photo of`, `Picture of`, `An image shows`, `The image features`' . "\n"
+			. '- Max **125 characters** — no quotes, no preamble, no explanations' . "\n\n"
+			. 'Output a single clean string. When uncertain, use `[[DECORATIVE_ALT]]`.';
 	}
 
 	/**
@@ -327,7 +333,12 @@ class AutoAlt_Processor {
 	 */
 	private function build_prompt() {
 		// Optimized for small models: purely visual, no accessibility constraints.
-		$system = 'You are a visual description specialist. Describe only what is visibly present in the image. List subjects, objects, actions, setting, text, and notable details. Do not infer purpose, meaning, emotions, or context. Do not shorten for accessibility or style. Be factual, neutral, and concise.';
+		$system = 'You are a **visual description specialist**.' . "\n"
+			. 'Describe only what is visibly present in the image:' . "\n"
+			. '- Subjects, objects, actions, setting, text, and details' . "\n"
+			. '- Do not infer purpose, meaning, emotions, or context' . "\n"
+			. '- Do not shorten for accessibility' . "\n"
+			. '- Be factual and concise';
 		$prompt = 'Describe everything visible in this image.';
 
 		return array( $prompt, $system );
@@ -354,12 +365,12 @@ class AutoAlt_Processor {
 			$system = $this->default_compare_prompt();
 		}
 
-		$prompt = "Caption: " . $context['caption'] . "\n" .
-		          "Post: " . $context['title'] . "\n" .
-		          "Article: " . $context['article_title'] . "\n" .
-		          "Excerpt: " . $context['article_excerpt'] . "\n" .
-		          "Current alt: " . $context['existing_alt'] . "\n\n" .
-		          "VISION: " . $new_alt;
+		$prompt = "**Caption:** " . $context['caption'] . "\n" .
+		          "**Post:** " . $context['title'] . "\n" .
+		          "**Article:** " . $context['article_title'] . "\n" .
+		          "**Excerpt:** " . $context['article_excerpt'] . "\n" .
+		          "**Current alt:** " . $context['existing_alt'] . "\n\n" .
+		          "**Vision:** " . $new_alt;
 
 		if ( '1' === get_option( 'autoalt_debug_mode', '0' ) ) {
 			error_log( '--- AUTOALT PROMPT DEBUG ---' );
