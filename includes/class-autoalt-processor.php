@@ -195,7 +195,9 @@ class AutoAlt_Processor {
 		// Aggressive label stripping
 		$alt_text = preg_replace( '/^(?:Informative|Decorative|Functional)(?:\s+alt)?(?::|\s+)?\s*/i', '', $alt_text );
 		$alt_text = preg_replace( '/^Output:\s+/i', '', $alt_text );
-		$alt_text = preg_replace( '/\[\[DE.*ALT\]\]/i', '[[DECORATIVE_ALT]]', $alt_text );
+		// Strip all remaining [[...]] brackets — the DECORATIVE_ALT sentinel was handled above.
+		$alt_text = preg_replace( '/\[\[.*?\]\]/s', '', $alt_text );
+		$alt_text = trim( $alt_text );
 
 		if ( strlen( $alt_text ) > 125 ) {
 			$alt_text = substr( $alt_text, 0, 125 );
