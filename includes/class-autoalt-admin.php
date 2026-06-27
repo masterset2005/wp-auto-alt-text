@@ -611,7 +611,7 @@ class AutoAlt_Admin {
 							</p>
 						</td>
 					</tr>
-					<tr>
+					<tr data-mode="two-pass">
 						<th scope="row">
 							<label for="autoalt_text_model"><?php esc_html_e( 'Text Model Preference', 'auto-alt-text-generator' ); ?></label>
 						</th>
