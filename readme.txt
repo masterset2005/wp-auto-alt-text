@@ -4,7 +4,7 @@ Tags: alt text, accessibility, images, media library, AI
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -115,6 +115,18 @@ Supported providers include Anthropic (Claude), Google (Gemini), and OpenAI (GPT
 
 == Changelog ==
 
+= 1.2.2 =
+* Unified processing pipeline for all modes (missing, review, regenerate, upload).
+* Added context-aware synthesis: parent post context, caption, and sanitized existing alt are now sent to the AI.
+* Added data sanitation pipeline to remove low-value inputs before they reach the AI.
+* Improved prompts for 1-3B small model compliance (Vision Agent + Synthesizer Agent).
+* Added category-based filtering on the Processing page.
+* Added variable placeholders ({caption}, {visual_desc}, etc.) for custom prompts.
+* Added Debug Mode for full prompt logging.
+* Enhanced regex firewall to strip all hallucinated bracket labels.
+* Added undo button next to redo in processing logs.
+* Fixed UI overflow on Settings page.
+
 = 1.2.1 =
 * Fixed PHPStan level-max errors and improved type safety.
 * Improved prompt engineering to explicitly forbid category labels (Informative, Decorative, Functional).
@@ -153,6 +165,9 @@ Supported providers include Anthropic (Claude), Google (Gemini), and OpenAI (GPT
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.2.2 =
+Version 1.2.2 introduces a unified context-aware pipeline with data sanitation, category filtering, and enhanced prompt engineering for small models. Clears any saved custom comparison prompt — please re-save if needed.
 
 = 1.2.1 =
 Version 1.2.1 contains minor fixes for prompt instruction following and PHPStan type safety.
