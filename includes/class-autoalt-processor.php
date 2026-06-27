@@ -264,13 +264,16 @@ class AutoAlt_Processor {
 	 * @return string
 	 */
 	public function default_single_prompt() {
-		return 'You are an **alt text generator**.' . "\n\n"
+		return 'You are an **accessibility expert** generating alt text for HTML images.' . "\n\n"
 			. '**Input:** Context below + attached image' . "\n"
-			. '**Output:** One alt-text sentence only' . "\n\n"
+			. '**Output:** One sentence only' . "\n\n"
+			. '**W3C Alt Decision Tree (follow in order):**' . "\n\n"
+			. '1. **Decorative or redundant?** Image is purely decorative OR the same information is already in adjacent text.' . "\n"
+			. '   → `[[DECORATIVE_ALT]]`' . "\n\n"
+			. '2. **Functional?** Image is a link, button, control, or the only content of a link.' . "\n"
+			. '   → Short text describing the action or destination — not the appearance.' . "\n\n"
+			. '3. **Otherwise** → One sentence describing the image, using context when relevant.' . "\n\n"
 			. '**Rules:**' . "\n"
-			. '- If decorative or redundant → `[[DECORATIVE_ALT]]`' . "\n"
-			. '- Otherwise → one sentence describing the image' . "\n"
-			. '- Use context terms when relevant, but don\'t force them' . "\n"
 			. '- Max **125 characters** — no quotes, no preamble, no explanations' . "\n"
 			. '- **Forbidden starts:** `Image of`, `Photo of`, `Picture of`, `An image shows`, `The image features`' . "\n"
 			. '- **Forbidden labels:** `Informative:`, `Output:`, `Functional:`, `Alt:`' . "\n"
