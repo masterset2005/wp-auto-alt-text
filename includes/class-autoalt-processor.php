@@ -232,14 +232,14 @@ class AutoAlt_Processor {
 	 * @return string
 	 */
 	public function default_compare_prompt() {
-		return 'You are an AI formatter. Input: Image Context + Visual Description. Output: Final Alt Text string.' . "\n\n"
-			. 'Rules for Output:' . "\n"
-			. '1. If the image is decorative or redundant, output only: [[DECORATIVE_ALT]]' . "\n"
-			. '2. Otherwise, output ONE sentence describing the image based on context.' . "\n"
-			. '3. STRICT FORBIDDEN LIST: Do not include labels like "Informative:", "Output:", "Functional:", "Alt:".' . "\n"
-			. '4. Do not start with: "Image of", "Photo of", "Picture of", "An image shows", "The image features".' . "\n"
+		return 'You are an AI formatter. Input: Context + Visual Description. Output: Final Alt Text string.' . "\n\n"
+			. 'Rules:' . "\n"
+			. '1. If decorative or redundant, output only: [[DECORATIVE_ALT]]' . "\n"
+			. '2. Otherwise, output ONE sentence describing the image using context.' . "\n"
+			. '3. Forbidden: "Informative:", "Output:", "Functional:", "Alt:" labels.' . "\n"
+			. '4. Forbidden starts: "Image of", "Photo of", "Picture of", "An image shows", "The image features".' . "\n"
 			. '5. Max 125 characters. No quotes. No preamble. No explanations.' . "\n\n"
-			. 'Synthesize the input into a single clean string. If the input is confusing, default to: [[DECORATIVE_ALT]]';
+			. 'Write the output as a single clean string. If uncertain, output: [[DECORATIVE_ALT]]';
 	}
 
 	/**
@@ -314,7 +314,7 @@ class AutoAlt_Processor {
 			if ( $parent ) {
 				$context['article_title']   = $this->sanitize_input( $parent->post_title );
 				// Limit excerpt to ~1000 characters to stay safe within 1-3B model context limits
-				$context['article_excerpt'] = $this->sanitize_input( mb_substr( wp_strip_all_tags( $parent->post_content ), 0, 1000 ) );
+				$context['article_excerpt'] = $this->sanitize_input( mb_substr( wp_strip_all_tags( $parent->post_content ), 0, 500 ) );
 			}
 		}
 		return $context;
@@ -354,14 +354,12 @@ class AutoAlt_Processor {
 			$system = $this->default_compare_prompt();
 		}
 
-		$prompt = "CONTEXT:\n" .
-		          "Caption: " . $context['caption'] . "\n" .
-		          "Post Title: " . $context['title'] . "\n" .
-		          "Article Title: " . $context['article_title'] . "\n" .
-		          "Article Excerpt: " . $context['article_excerpt'] . "\n" .
-		          "Existing Alt: " . $context['existing_alt'] . "\n\n" .
-		          "VISUAL DESCRIPTION:\n" . $new_alt . "\n\n" .
-		          "Generate the final alt text following all system rules.";
+		$prompt = "Caption: " . $context['caption'] . "\n" .
+		          "Post: " . $context['title'] . "\n" .
+		          "Article: " . $context['article_title'] . "\n" .
+		          "Excerpt: " . $context['article_excerpt'] . "\n" .
+		          "Current alt: " . $context['existing_alt'] . "\n\n" .
+		          "VISION: " . $new_alt;
 
 		if ( '1' === get_option( 'autoalt_debug_mode', '0' ) ) {
 			error_log( '--- AUTOALT PROMPT DEBUG ---' );
