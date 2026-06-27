@@ -239,15 +239,6 @@ class AutoAlt_Processor {
 			. '3. STRICT FORBIDDEN LIST: Do not include labels like "Informative:", "Output:", "Functional:", "Alt:".' . "\n"
 			. '4. Do not start with: "Image of", "Photo of", "Picture of", "An image shows", "The image features".' . "\n"
 			. '5. Max 125 characters. No quotes. No preamble. No explanations.' . "\n\n"
-			. 'EXAMPLE:' . "\n"
-			. 'CONTEXT:' . "\n"
-			. 'Caption: Woman in garden' . "\n"
-			. 'Post Title: Spring Gardening Tips' . "\n"
-			. 'Article Title: 5 Tips for Spring' . "\n"
-			. 'Article Excerpt: Spring is the best time to plant vegetables.' . "\n"
-			. 'Existing Alt: ' . "\n"
-			. 'VISUAL DESCRIPTION: A woman in a sun hat planting tomato seedlings in raised garden beds.' . "\n"
-			. 'A woman planting tomato seedlings in raised garden beds during spring.' . "\n\n"
 			. 'Synthesize the input into a single clean string. If the input is confusing, default to: [[DECORATIVE_ALT]]';
 	}
 
