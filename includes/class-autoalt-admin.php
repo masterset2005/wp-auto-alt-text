@@ -50,6 +50,7 @@ class AutoAlt_Admin {
 		add_action( 'wp_ajax_autoalt_create_job', array( $this, 'ajax_create_job' ) );
 		add_action( 'wp_ajax_autoalt_job_status', array( $this, 'ajax_job_status' ) );
 		add_action( 'wp_ajax_autoalt_cancel_job', array( $this, 'ajax_cancel_job' ) );
+		add_action( 'wp_ajax_autoalt_get_models', array( $this, 'ajax_get_models' ) );
 		add_action( 'autoalt_process_batch', array( $this, 'process_background_batch' ) );
 		add_action( 'add_attachment', array( $this, 'auto_generate_on_upload' ) );
 	}
@@ -593,9 +594,20 @@ class AutoAlt_Admin {
 							<label for="autoalt_vision_model"><?php esc_html_e( 'Vision Model Preference', 'auto-alt-text-generator' ); ?></label>
 						</th>
 						<td>
-							<input type="text" id="autoalt_vision_model" name="autoalt_vision_model" value="<?php echo esc_attr( get_option( 'autoalt_vision_model', '' ) ); ?>" class="regular-text code" placeholder="e.g. gemma4:e2b, llava, moondream">
+							<select id="autoalt_vision_model" name="autoalt_vision_model" class="regular-text" style="max-width:400px;">
+								<option value=""><?php esc_html_e( '- Default -', 'auto-alt-text-generator' ); ?></option>
+								<?php
+								$saved = get_option( 'autoalt_vision_model', '' );
+								if ( '' !== $saved ) {
+									$saved_models = array_map( 'trim', explode( ',', $saved ) );
+									foreach ( $saved_models as $m ) {
+										echo '<option value="' . esc_attr( $m ) . '" selected>' . esc_html( $m ) . '</option>';
+									}
+								}
+								?>
+							</select>
 							<p class="description">
-								<?php esc_html_e( 'Preferred model(s) for image analysis (vision calls). Comma-separated for fallback order. The AI Client uses the first available model from this list. Leave empty to use the default.', 'auto-alt-text-generator' ); ?>
+								<?php esc_html_e( 'Preferred model(s) for image analysis (vision calls). The dropdown is populated from your configured AI providers. Select one, or leave empty for the default.', 'auto-alt-text-generator' ); ?>
 							</p>
 						</td>
 					</tr>
@@ -604,9 +616,20 @@ class AutoAlt_Admin {
 							<label for="autoalt_text_model"><?php esc_html_e( 'Text Model Preference', 'auto-alt-text-generator' ); ?></label>
 						</th>
 						<td>
-							<input type="text" id="autoalt_text_model" name="autoalt_text_model" value="<?php echo esc_attr( get_option( 'autoalt_text_model', '' ) ); ?>" class="regular-text code" placeholder="e.g. gemma4:e2b, qwen2.5:7b">
+							<select id="autoalt_text_model" name="autoalt_text_model" class="regular-text" style="max-width:400px;">
+								<option value=""><?php esc_html_e( '- Default -', 'auto-alt-text-generator' ); ?></option>
+								<?php
+								$saved = get_option( 'autoalt_text_model', '' );
+								if ( '' !== $saved ) {
+									$saved_models = array_map( 'trim', explode( ',', $saved ) );
+									foreach ( $saved_models as $m ) {
+										echo '<option value="' . esc_attr( $m ) . '" selected>' . esc_html( $m ) . '</option>';
+									}
+								}
+								?>
+							</select>
 							<p class="description">
-								<?php esc_html_e( 'Preferred model(s) for text-only processing (Synthesizer in Two-Pass mode). Comma-separated for fallback order. Leave empty to use the default.', 'auto-alt-text-generator' ); ?>
+								<?php esc_html_e( 'Preferred model(s) for text-only processing (Synthesizer in Two-Pass mode). Select one, or leave empty for the default.', 'auto-alt-text-generator' ); ?>
 							</p>
 						</td>
 					</tr>
@@ -761,6 +784,44 @@ Example: "Context: {article_title}. Visual: {visual_desc}"
 			$( 'input[name="autoalt_processing_mode"]' ).on( 'change', autoalt_toggle_mode );
 			autoalt_toggle_mode();
 		} )( jQuery );
+		</script>
+		<script>
+		jQuery(function($) {
+			var $vision = $('#autoalt_vision_model');
+			var $text   = $('#autoalt_text_model');
+			if (!$vision.length) return;
+
+			var savedVision = $vision.val();
+			var savedText   = $text.val();
+
+			$.ajax({
+				url: ajaxurl,
+				method: 'POST',
+				data: {
+					action: 'autoalt_get_models',
+					_ajax_nonce: '<?php echo esc_js( wp_create_nonce( 'autoalt_get_models' ) ); ?>',
+				},
+				success: function(response) {
+					if (!response.success || !response.data) return;
+
+					$.each(response.data, function(i, provider) {
+						var $group = $('<optgroup>').attr('label', provider.provider);
+						$.each(provider.models, function(j, model) {
+							$group.append($('<option>').val(model.id).text(model.name + ' (' + model.id + ')'));
+						});
+						$vision.append($group.clone());
+						$text.append($group);
+					});
+
+					if (savedVision) $vision.val(savedVision);
+					if (savedText) $text.val(savedText);
+				},
+				error: function() {
+					$vision.replaceWith('<input type="text" id="autoalt_vision_model" name="autoalt_vision_model" value="' + (savedVision || '') + '" class="regular-text code" placeholder="Model not found via AJAX">');
+					$text.replaceWith('<input type="text" id="autoalt_text_model" name="autoalt_text_model" value="' + (savedText || '') + '" class="regular-text code" placeholder="Model not found via AJAX">');
+				}
+			});
+		});
 		</script>
 		<style>
 		tr[data-mode].hidden { display: none; }
@@ -1033,6 +1094,58 @@ Example: "Context: {article_title}. Visual: {visual_desc}"
 		}
 
 		wp_send_json_success( $job );
+	}
+
+	/**
+	 * AJAX: list available models from all configured AI providers.
+	 *
+	 * @return void
+	 */
+	public function ajax_get_models() {
+		check_ajax_referer( 'autoalt_get_models' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Insufficient permissions' );
+		}
+
+		if ( ! class_exists( 'WordPress\AiClient\AiClient' ) ) {
+			wp_send_json_error( 'AI Client not available' );
+		}
+
+		try {
+			$registry    = \WordPress\AiClient\AiClient::defaultRegistry();
+			$provider_ids = $registry->getRegisteredProviderIds();
+			$models      = array();
+
+			foreach ( $provider_ids as $provider_id ) {
+				if ( ! $registry->isProviderConfigured( $provider_id ) ) {
+					continue;
+				}
+
+				$class_name      = $registry->getProviderClassName( $provider_id );
+				$model_dir       = $class_name::modelMetadataDirectory();
+				$provider_models = $model_dir->listModelMetadata();
+				$group           = array();
+
+				foreach ( $provider_models as $model ) {
+					$group[] = array(
+						'id'   => $model->getId(),
+						'name' => $model->getName(),
+					);
+				}
+
+				if ( ! empty( $group ) ) {
+					$models[] = array(
+						'provider' => $provider_id,
+						'models'   => $group,
+					);
+				}
+			}
+
+			wp_send_json_success( $models );
+		} catch ( \Exception $e ) {
+			wp_send_json_error( $e->getMessage() );
+		}
 	}
 
 	/**
