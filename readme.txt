@@ -4,7 +4,7 @@ Tags: alt text, accessibility, images, media library, AI
 Requires at least: 7.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.2.2
+Stable tag: 1.3.0
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -115,6 +115,18 @@ Supported providers include Anthropic (Claude), Google (Gemini), and OpenAI (GPT
 
 == Changelog ==
 
+= 1.3.0 =
+* Added single-pass/two-pass processing mode setting — high-end models use one AI call; small models split vision + synthesizer.
+* Added Excerpt Limit setting to control parent post excerpt length sent to the AI (default 500, range 0–5000).
+* Restored W3C Alt Decision Tree (decorative → functional → descriptive) in the default single-pass prompt.
+* Converted all default prompts to Markdown format for better small-model parsing.
+* Fixed infinite loop in sequential processing — offset was tracked in JS but never sent in the AJAX request.
+* Fixed settings page layout — removed stray closing div; replaced jQuery .hide()/.show() with CSS class toggle.
+* Fixed pre-existing PHP parse error from raw HTML in the constructor.
+* Added sanitize callback for processing_mode setting.
+* Added phpcs.xml.dist for local development with proper text domain.
+* Added translators comments to satisfy WordPress I18n standards.
+
 = 1.2.2 =
 * Unified processing pipeline for all modes (missing, review, regenerate, upload).
 * Added context-aware synthesis: parent post context, caption, and sanitized existing alt are now sent to the AI.
@@ -165,6 +177,9 @@ Supported providers include Anthropic (Claude), Google (Gemini), and OpenAI (GPT
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.3.0 =
+Version 1.3.0 adds a dual-mode processing system: Single-Pass for high-end models and the existing Two-Pass split for small models. Also adds an Excerpt Limit setting and restores the W3C Alt Decision Tree in the single-pass default prompt. Clears any saved custom prompts on upgrade — please re-save if needed.
 
 = 1.2.2 =
 Version 1.2.2 introduces a unified context-aware pipeline with data sanitation, category filtering, and enhanced prompt engineering for small models. Clears any saved custom comparison prompt — please re-save if needed.
