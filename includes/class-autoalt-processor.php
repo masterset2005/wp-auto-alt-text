@@ -170,39 +170,36 @@ class AutoAlt_Processor {
 			return $this->result( $attachment_id, $title, 'error', null, __( 'AI Client not available.', 'auto-alt-text-generator' ) );
 		}
 
-		// Phase 1: Vision LLM (Observation)
-		list( $prompt, $system ) = $this->build_prompt();
-		$alt_text = wp_ai_client_prompt( $prompt )
-			->using_system_instruction( $system )
-			->with_file( $file, $mime )
-			->generate_text();
+		$mode = get_option( 'autoalt_processing_mode', 'two-pass' );
 
-		if ( is_wp_error( $alt_text ) ) {
-			return $this->result( $attachment_id, $title, 'error', null, sprintf( __( 'AI generation failed: %s', 'auto-alt-text-generator' ), $alt_text->get_error_message() ) );
+		if ( 'single-pass' === $mode ) {
+			// Single call: vision model receives full instructions + context + image.
+			list( $system, $prompt ) = $this->build_single_prompt( $context );
+			$alt_text = wp_ai_client_prompt( $prompt )
+				->using_system_instruction( $system )
+				->with_file( $file, $mime )
+				->generate_text();
+
+			if ( is_wp_error( $alt_text ) ) {
+				return $this->result( $attachment_id, $title, 'error', null, sprintf( __( 'AI generation failed: %s', 'auto-alt-text-generator' ), $alt_text->get_error_message() ) );
+			}
+		} else {
+			// Two-pass: Vision → Synthesizer.
+			list( $prompt, $system ) = $this->build_prompt();
+			$alt_text = wp_ai_client_prompt( $prompt )
+				->using_system_instruction( $system )
+				->with_file( $file, $mime )
+				->generate_text();
+
+			if ( is_wp_error( $alt_text ) ) {
+				return $this->result( $attachment_id, $title, 'error', null, sprintf( __( 'AI generation failed: %s', 'auto-alt-text-generator' ), $alt_text->get_error_message() ) );
+			}
+
+			$alt_text = $this->compare_alt_texts( $context, $alt_text );
 		}
 
-		// Phase 2: Synthesizer (Context + Logic)
-		$alt_text = $this->compare_alt_texts( $context, $alt_text );
+		$alt_text = $this->clean_alt_text( $alt_text );
 
-		if ( preg_match( '/\[\[DECORATIVE(?:_ALT)?\]\]/i', $alt_text ) ) {
-			$alt_text = '';
-		}
-
-		$alt_text = sanitize_text_field( $alt_text );
-		$alt_text = preg_replace( '/^["\'\x{2018}\x{2019}\x{201C}\x{201D}]+|["\'\x{2018}\x{2019}\x{201C}\x{201D}]+$/u', '', $alt_text );
-		$alt_text = preg_replace( '/^(?:An?|The)\s+(?:image|photo|picture|shot|scene|view)(?:\s+(?:shows?|features?|depicts?|showcases?|displays?|presents?|captures?|of|with|in))?\s+/i', '', $alt_text );
-		
-		// Aggressive label stripping
-		$alt_text = preg_replace( '/^(?:Informative|Decorative|Functional)(?:\s+alt)?(?::|\s+)?\s*/i', '', $alt_text );
-		$alt_text = preg_replace( '/^Output:\s+/i', '', $alt_text );
-		// Strip all remaining [[...]] brackets — the DECORATIVE_ALT sentinel was handled above.
-		$alt_text = preg_replace( '/\[\[.*?\]\]/s', '', $alt_text );
-		$alt_text = trim( $alt_text );
-
-		if ( strlen( $alt_text ) > 125 ) {
-			$alt_text = substr( $alt_text, 0, 125 );
-		}
-		
 		$changed = $alt_text !== $context['existing_alt'];
 		update_post_meta( $attachment_id, '_wp_attachment_image_alt', $alt_text );
 
@@ -218,6 +215,33 @@ class AutoAlt_Processor {
 	}
 
 	/**
+	 * Clean raw alt text: decorative check, sanitize, strip labels, truncate.
+	 *
+	 * @param string $raw Raw alt text from AI.
+	 * @return string
+	 */
+	private function clean_alt_text( $raw ) {
+		if ( preg_match( '/\[\[DECORATIVE(?:_ALT)?\]\]/i', $raw ) ) {
+			$raw = '';
+		}
+
+		$raw = sanitize_text_field( $raw );
+		$raw = preg_replace( '/^["\'\x{2018}\x{2019}\x{201C}\x{201D}]+|["\'\x{2018}\x{2019}\x{201C}\x{201D}]+$/u', '', $raw );
+		$raw = preg_replace( '/^(?:An?|The)\s+(?:image|photo|picture|shot|scene|view)(?:\s+(?:shows?|features?|depicts?|showcases?|displays?|presents?|captures?|of|with|in))?\s+/i', '', $raw );
+
+		$raw = preg_replace( '/^(?:Informative|Decorative|Functional)(?:\s+alt)?(?::|\s+)?\s*/i', '', $raw );
+		$raw = preg_replace( '/^Output:\s+/i', '', $raw );
+		$raw = preg_replace( '/\[\[.*?\]\]/s', '', $raw );
+		$raw = trim( $raw );
+
+		if ( strlen( $raw ) > 125 ) {
+			$raw = substr( $raw, 0, 125 );
+		}
+
+		return $raw;
+	}
+
+	/**
 	 * Default system prompt following W3C Alt Decision Tree.
 	 *
 	 * @return string
@@ -228,6 +252,55 @@ class AutoAlt_Processor {
 			. '- Do not infer purpose, meaning, emotions, or context.' . "\n"
 			. '- Do not shorten for accessibility or style.' . "\n"
 			. '- Be factual, neutral, and concise.';
+	}
+
+	/**
+	 * Default combined prompt for single-pass (high-end models).
+	 *
+	 * @return string
+	 */
+	public function default_single_prompt() {
+		return 'You are an **alt text generator**.' . "\n\n"
+			. '**Input:** Context below + attached image' . "\n"
+			. '**Output:** One alt-text sentence only' . "\n\n"
+			. '**Rules:**' . "\n"
+			. '- If decorative or redundant → `[[DECORATIVE_ALT]]`' . "\n"
+			. '- Otherwise → one sentence describing the image' . "\n"
+			. '- Use context terms when relevant, but don\'t force them' . "\n"
+			. '- Max **125 characters** — no quotes, no preamble, no explanations' . "\n"
+			. '- **Forbidden starts:** `Image of`, `Photo of`, `Picture of`, `An image shows`, `The image features`' . "\n"
+			. '- **Forbidden labels:** `Informative:`, `Output:`, `Functional:`, `Alt:`' . "\n"
+			. '- Start with a noun phrase' . "\n\n"
+			. '**Context:**' . "\n"
+			. '**Caption:** {caption}' . "\n"
+			. '**Post:** {title}' . "\n"
+			. '**Article:** {article_title}' . "\n"
+			. '**Excerpt:** {article_excerpt}' . "\n"
+			. '**Current alt:** {existing_alt}' . "\n\n"
+			. 'Output a single clean string. When uncertain, use `[[DECORATIVE_ALT]]`.';
+	}
+
+	/**
+	 * Build system + user prompt for single-pass mode.
+	 *
+	 * @param array $context Attachment context.
+	 * @return array{0: string, 1: string}
+	 */
+	private function build_single_prompt( $context ) {
+		$custom = get_option( 'autoalt_single_prompt', '' );
+		if ( ! empty( trim( $custom ) ) ) {
+			$system = $custom;
+		} else {
+			$system = $this->default_single_prompt();
+		}
+
+		$system = str_replace(
+			array( '{caption}', '{title}', '{article_title}', '{article_excerpt}', '{existing_alt}', '{visual_desc}' ),
+			array( $context['caption'], $context['title'], $context['article_title'], $context['article_excerpt'], $context['existing_alt'], '' ),
+			$system
+		);
+
+		return array( $system, 'Generate alt text for this image following the system instructions.' );
 	}
 
 	/**

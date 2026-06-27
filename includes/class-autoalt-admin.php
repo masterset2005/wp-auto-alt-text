@@ -45,10 +45,6 @@ class AutoAlt_Admin {
 		add_action( 'admin_menu', array( $this, 'add_processing_page' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'wp_ajax_autoalt_process_single', array( $this, 'ajax_process_single' ) );
-
-	/** Responsive form table max-height fix */
-	<style id="autoalt-responsive-form"></style>
-	<script>(document).ready(function(){$('.wrap .form-table td[scope=row]').css({maxHeight:'50vh'}).find('th,td').each(function(){$(this).attr('data-rowscope'?)$(this).css(maxHeight:48vh):void 0;});$('.description').css(width:'100%');});</script>
 		add_action( 'wp_ajax_autoalt_undo', array( $this, 'ajax_undo' ) );
 		add_action( 'wp_ajax_autoalt_get_ids', array( $this, 'ajax_get_ids' ) );
 		add_action( 'wp_ajax_autoalt_create_job', array( $this, 'ajax_create_job' ) );
@@ -372,6 +368,25 @@ class AutoAlt_Admin {
 
 		register_setting(
 			'autoalt_settings',
+			'autoalt_processing_mode',
+			array(
+				'type'    => 'string',
+				'default' => 'two-pass',
+			)
+		);
+
+		register_setting(
+			'autoalt_settings',
+			'autoalt_single_prompt',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_textarea_field',
+				'default'           => '',
+			)
+		);
+
+		register_setting(
+			'autoalt_settings',
 			'autoalt_system_prompt',
 			array(
 				'type'              => 'string',
@@ -472,7 +487,59 @@ class AutoAlt_Admin {
 					</tr>
 					<tr>
 						<th scope="row">
-							<label for="autoalt_system_prompt"><?php esc_html_e( 'System Prompt', 'auto-alt-text-generator' ); ?></label>
+							<?php esc_html_e( 'Processing Mode', 'auto-alt-text-generator' ); ?>
+						</th>
+						<td>
+							<fieldset>
+								<label style="display:block;margin-bottom:6px;">
+									<input type="radio" name="autoalt_processing_mode" value="single-pass" <?php checked( get_option( 'autoalt_processing_mode', 'two-pass' ), 'single-pass' ); ?>>
+									<strong><?php esc_html_e( 'Single-Pass', 'auto-alt-text-generator' ); ?></strong>
+									&mdash; <?php esc_html_e( 'One AI call with image + full instructions. Requires a high-end model (e.g., GPT-4o, Gemini 1.5 Pro, Claude 3.5).', 'auto-alt-text-generator' ); ?>
+								</label>
+								<label style="display:block;">
+									<input type="radio" name="autoalt_processing_mode" value="two-pass" <?php checked( get_option( 'autoalt_processing_mode', 'two-pass' ), 'two-pass' ); ?>>
+									<strong><?php esc_html_e( 'Two-Pass (Split Load)', 'auto-alt-text-generator' ); ?></strong>
+									&mdash; <?php esc_html_e( 'Vision Agent observes, then Synthesizer formats. Designed for small local models (1-3B params).', 'auto-alt-text-generator' ); ?>
+								</label>
+							</fieldset>
+						</td>
+					</tr>
+					<tr data-mode="single-pass">
+						<th scope="row">
+							<label for="autoalt_single_prompt"><?php esc_html_e( 'Single-Pass Prompt', 'auto-alt-text-generator' ); ?></label>
+						</th>
+						<td>
+							<textarea id="autoalt_single_prompt" name="autoalt_single_prompt" rows="12" class="large-text code">
+							<?php
+								echo esc_textarea( get_option( 'autoalt_single_prompt', '' ) );
+							?>
+							</textarea>
+							<p class="description">
+								<?php esc_html_e( 'Combined system instruction for Single-Pass mode. Vision and formatting rules in one prompt. Use the variables below to inject context.', 'auto-alt-text-generator' ); ?>
+							</p>
+							<details style="margin-top:8px;">
+								<summary><?php esc_html_e( 'Available variables', 'auto-alt-text-generator' ); ?></summary>
+								<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;color:#666;">
+{caption}         - Image caption (post_excerpt)
+{title}           - Image title (post_title)
+{article_title}   - Parent post title
+{article_excerpt} - Parent post excerpt (first 500 chars)
+{existing_alt}    - Current alt text in database
+								</pre>
+							</details>
+							<details style="margin-top:8px;">
+								<summary><?php esc_html_e( 'Default prompt (click to expand)', 'auto-alt-text-generator' ); ?></summary>
+								<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;">
+								<?php
+									echo esc_textarea( AutoAlt_Processor::init()->default_single_prompt() );
+								?>
+								</pre>
+							</details>
+						</td>
+					</tr>
+					<tr data-mode="two-pass">
+						<th scope="row">
+							<label for="autoalt_system_prompt"><?php esc_html_e( 'Vision Prompt (Two-Pass)', 'auto-alt-text-generator' ); ?></label>
 						</th>
 						<td>
 							<textarea id="autoalt_system_prompt" name="autoalt_system_prompt" rows="12" class="large-text code">
@@ -481,11 +548,10 @@ class AutoAlt_Admin {
 							?>
 							</textarea>
 							<p class="description">
-								<?php esc_html_e( 'Override the default system instruction sent to the AI model. Use few-shot examples to improve output quality from smaller models. Leave empty to use the built-in prompt.', 'auto-alt-text-generator' ); ?>
+								<?php esc_html_e( 'System instruction for the vision model (Two-Pass Mode only). Describes what to extract from the image. Leave empty to use the built-in default.', 'auto-alt-text-generator' ); ?>
 							</p>
 							<details style="margin-top:8px;">
-								<details style="margin-top:8px;">
-								<summary><?php esc_html_e( 'Available variables for System Prompt', 'auto-alt-text-generator' ); ?></summary>
+								<summary><?php esc_html_e( 'Available variables', 'auto-alt-text-generator' ); ?></summary>
 								<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;color:#666;">
 Available context variables for your custom prompt:
 {caption}         - Image caption (post_excerpt)
@@ -509,9 +575,9 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							</details>
 						</td>
 					</tr>
-					<tr>
+					<tr data-mode="two-pass">
 						<th scope="row">
-							<label for="autoalt_compare_prompt"><?php esc_html_e( 'Comparison Prompt', 'auto-alt-text-generator' ); ?></label>
+							<label for="autoalt_compare_prompt"><?php esc_html_e( 'Synthesizer Prompt (Two-Pass)', 'auto-alt-text-generator' ); ?></label>
 						</th>
 						<td>
 							<textarea id="autoalt_compare_prompt" name="autoalt_compare_prompt" rows="8" class="large-text code">
@@ -520,16 +586,16 @@ Example: "The image is about {article_title}. Visual: {visual_desc}"
 							?>
 							</textarea>
 							<p class="description">
-								<?php esc_html_e( 'System instruction for the text-only comparison step (Review mode). Given old and new alt text, it decides which to keep or combines both. Leave empty to use the built-in default.', 'auto-alt-text-generator' ); ?>
+								<?php esc_html_e( 'System instruction for the Synthesizer (Two-Pass Mode only). Receives context + vision description and produces the final alt text. Leave empty to use the built-in default.', 'auto-alt-text-generator' ); ?>
 							</p>
 							<details style="margin-top:8px;">
-								<summary><?php esc_html_e( 'Available variables for Comparison Prompt', 'auto-alt-text-generator' ); ?></summary>
+								<summary><?php esc_html_e( 'Available variables for Synthesizer Prompt', 'auto-alt-text-generator' ); ?></summary>
 								<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;color:#666;">
 Available context variables for your custom prompt:
 {caption}         - Image caption (post_excerpt)
 {title}           - Image title (post_title)
 {article_title}   - Parent post title
-{article_excerpt} - Parent post excerpt (first 1000 chars)
+{article_excerpt} - Parent post excerpt (first 500 chars)
 {existing_alt}    - Current alt text in database
 {visual_desc}     - Raw output from Vision model
 
@@ -538,7 +604,7 @@ Example: "Context: {article_title}. Visual: {visual_desc}"
 								</pre>
 							</details>
 							<details style="margin-top:8px;">
-								<summary><?php esc_html_e( 'Default comparison prompt (click to expand)', 'auto-alt-text-generator' ); ?></summary>
+								<summary><?php esc_html_e( 'Default Synthesizer prompt (click to expand)', 'auto-alt-text-generator' ); ?></summary>
 								<pre style="background:#f0f0f1;padding:12px;font-size:12px;max-height:240px;overflow:auto;margin:8px 0 0;">
 								<?php
 									echo esc_textarea( AutoAlt_Processor::init()->default_compare_prompt() );
@@ -579,6 +645,17 @@ Example: "Context: {article_title}. Visual: {visual_desc}"
 				<?php submit_button(); ?>
 			</form>
 		</div>
+	<script>
+	jQuery(function($) {
+		function autoalt_toggle_mode() {
+			var mode = $('input[name="autoalt_processing_mode"]:checked').val();
+			$('tr[data-mode]').hide();
+			$('tr[data-mode="' + mode + '"]').show();
+		}
+		$('input[name="autoalt_processing_mode"]').on('change', autoalt_toggle_mode);
+		autoalt_toggle_mode();
+	});
+	</script>
 	<style id="autoalt-responsive-form"></style>
 	<script>(document).ready(function() { $('.wrap .form-table td[scope=row]').css('max-height', '50vh'); $('.wrap .form-table th[rowscope]').css('max-height', '48vh'); });</script>
 

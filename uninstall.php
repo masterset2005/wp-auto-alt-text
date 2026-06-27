@@ -18,6 +18,9 @@ $autoalt_options = array(
 	'autoalt_auto_generate',
 	'autoalt_show_generated',
 	'autoalt_job_status',
+	'autoalt_debug_mode',
+	'autoalt_processing_mode',
+	'autoalt_single_prompt',
 );
 
 foreach ( $autoalt_options as $autoalt_option ) {
